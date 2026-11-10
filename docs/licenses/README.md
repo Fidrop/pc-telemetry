@@ -11,3 +11,5 @@
 .NET运行时8.0.33的LICENSE与THIRD-PARTY-NOTICES由发布所用官方NuGet运行时包复制，随二进制交付。Android各锁定运行时依赖的许可/作者从本机已验证依赖POM提取，通用Apache2.0文本一并提供。
 
 这些文件仅描述第三方依赖，不为本项目源码选择或授予许可证。
+
+ROG眼睛的矢量实现取自Simple Icons（CC0-1.0），全文见Simple-Icons.txt，素材与商标声明见../brand-assets.md。

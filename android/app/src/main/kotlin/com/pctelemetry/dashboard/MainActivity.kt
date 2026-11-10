@@ -151,10 +151,12 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
         }
         if (theme == DashboardTheme.SPORT) {
             SportDashboard(values, state, status, age, if (selfTest) startup.value else null, staleLabel,
-                instruments.semantics { contentDescription = "SPORT dashboard"; stateDescription = readingDescription })
+                instruments.semantics { contentDescription = "SPORT dashboard"; stateDescription = readingDescription },
+                rogBranding = settings.rogBranding)
         } else {
             HudDashboard(values, state, status, age, { chartOrigin + chartTime.toLong() }, staleLabel,
-                instruments.semantics { contentDescription = "HUD dashboard"; stateDescription = readingDescription })
+                instruments.semantics { contentDescription = "HUD dashboard"; stateDescription = readingDescription },
+                rogBranding = settings.rogBranding)
         }
         TextButton(onClick = { panel = true }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
             .semantics { contentDescription = settingsDescription }) { Text("⚙", fontSize = 25.sp) }

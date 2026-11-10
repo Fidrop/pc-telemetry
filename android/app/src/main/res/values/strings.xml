@@ -25,6 +25,7 @@
     <string name="cancel">取消</string>
     <string name="settings">设置</string>
     <string name="theme">主题</string>
+    <string name="brand_style">标志样式</string>
     <string name="language">语言</string>
     <string name="system">跟随系统</string>
     <string name="night">夜间模式</string>

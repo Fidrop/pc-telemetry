@@ -44,6 +44,10 @@ class DashboardInstrumentedTest {
                 rule.onAllNodesWithText("Enter DEMO").fetchSemanticsNodes().isEmpty()
         }
         rule.mainClock.advanceTimeBy(2000)
+        if (InstrumentationRegistry.getArguments().getString("visualCapture") == "true") {
+            val model = rule.runOnUiThread { ViewModelProvider(rule.activity)[DashboardViewModel::class.java] }
+            rule.waitUntil(75_000) { model.state.value.history.size >= 58 }
+        }
         save("sport-demo.png")
         rule.onNodeWithContentDescription("SPORT dashboard").performTouchInput { swipeLeft() }
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
@@ -59,18 +63,27 @@ class DashboardInstrumentedTest {
         rule.onNodeWithText("Enter DEMO").performClick()
         rule.onNodeWithContentDescription("Settings").performClick()
         rule.onNodeWithText("HUD").performClick()
-        rule.onNodeWithText("简体中文").performClick()
+        rule.onNodeWithText("TELEMETRY").performScrollTo().performClick()
+        if (InstrumentationRegistry.getArguments().getString("visualCapture") == "true") {
+            rule.onNodeWithTag("settings-close").performScrollTo()
+            saveDialog("settings-en.png")
+        }
+        rule.onNodeWithText("简体中文").performScrollTo().performClick()
         rule.waitUntil(10_000) {
             rule.onAllNodesWithText("设置").fetchSemanticsNodes().isNotEmpty()
         }
         rule.onNodeWithText("设置").assertExists()
-        rule.onNodeWithText("开启").performClick()
+        rule.onNodeWithText("开启").performScrollTo().performClick()
         rule.onNodeWithContentDescription("OLED 像素微移").performScrollTo().performClick()
-        val expected = UiSettings(DashboardTheme.HUD, "zh", "on", true)
+        val expected = UiSettings(DashboardTheme.HUD, "zh", "on", true, false)
         try { rule.waitUntil(5000) { model.settings.value == expected } }
         catch (failure: Throwable) { throw AssertionError("Expected settings $expected, observed ${model.settings.value}", failure) }
         val restored = withTimeout(5000) { UiSettingsStore(context).settings.first { it == expected } }
         assertEquals(expected, restored)
+        if (InstrumentationRegistry.getArguments().getString("visualCapture") == "true") {
+            rule.onNodeWithTag("settings-close").performScrollTo()
+            saveDialog("settings-zh.png")
+        }
         rule.onNodeWithTag("settings-close").performScrollTo().performClick()
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
     }
@@ -120,6 +133,12 @@ class DashboardInstrumentedTest {
             val reply = Protocol.json.decodeFromString<AuthResult>(revokedSocket.receive()!!)
             assertFalse(reply.success)
         } finally { revokedSocket.close() }
+    }
+    private fun saveDialog(name: String) {
+        val directory = File(context.getExternalFilesDir(null), "qa").apply { mkdirs() }
+        File(directory, name).outputStream().use {
+            rule.onNode(isDialog()).captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
     }
     private fun save(name: String) {
         val directory = File(context.getExternalFilesDir(null), "qa").apply { mkdirs() }

@@ -1,0 +1,8 @@
+
+com.pctelemetry.dashboard.DashboardPerformanceTest:.
+
+Time: 47.823
+
+OK (1 test)
+
+

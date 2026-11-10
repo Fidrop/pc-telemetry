@@ -30,7 +30,8 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Row(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f))) {
             Spacer(Modifier.weight(1f).fillMaxHeight().clickable(onClick = onDismiss))
-            Surface(color = Color(0xF2121C23), modifier = Modifier.fillMaxHeight().widthIn(max = 420.dp).width(380.dp)) {
+            Surface(color = Color(0xFF101C27), contentColor = White,
+                modifier = Modifier.fillMaxHeight().widthIn(max = 420.dp).width(380.dp)) {
                 Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -50,6 +51,10 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                         val language = listOf("system", "zh", "en")[it]
                         model.changeSettings { previous -> previous.copy(language = language) }
                     }
+                    Text(stringResource(R.string.brand_style))
+                    Choices(listOf("ROG", "TELEMETRY"), if (value.rogBranding) 0 else 1) { index ->
+                        model.changeSettings { it.copy(rogBranding = index == 0) }
+                    }
                     Text(stringResource(R.string.night))
                     Choices(listOf(stringResource(R.string.system), stringResource(R.string.night_on),
                         stringResource(R.string.night_off)), listOf("system", "on", "off").indexOf(value.night)) {
@@ -59,7 +64,10 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.pixel_shift), Modifier.weight(1f))
                         Switch(value.pixelShift, { enabled -> model.changeSettings { it.copy(pixelShift = enabled) } },
-                            modifier = Modifier.semantics { contentDescription = pixelShiftDescription })
+                            modifier = Modifier.semantics { contentDescription = pixelShiftDescription },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF05252A),
+                                checkedTrackColor = Cyan, uncheckedThumbColor = Silver,
+                                uncheckedTrackColor = Color(0xFF273D4A)))
                     }
                     Text(stringResource(R.string.gpu_selection))
                     state.gpus.forEach { gpu ->
@@ -86,7 +94,10 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
 private fun Choices(labels: List<String>, selected: Int, change: (Int) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         labels.forEachIndexed { index, label ->
-            FilterChip(selected == index, { change(index) }, label = { Text(label) })
+            FilterChip(selected == index, { change(index) }, label = { Text(label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = Color(0xFF172B39), labelColor = White,
+                    selectedContainerColor = Color(0xFF17464E), selectedLabelColor = Color(0xFF86F8F1)))
         }
     }
 }

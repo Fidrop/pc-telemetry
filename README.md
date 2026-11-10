@@ -13,6 +13,7 @@ Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主
 - [阶段6构建与性能报告](docs/stage-6-report.md)
 - [安装、配对与故障排查](docs/user-guide.md)
 - [已知问题](docs/known-issues.md)
+- [ROG / HUD / 设置视觉更新与截图](docs/visual-revision-report.md)
 - [依赖与工程方案](docs/architecture.md)
 - [协议草案](protocol/README.md)
 - [安全方案](docs/security.md)
