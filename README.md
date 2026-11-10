@@ -1,7 +1,7 @@
 # PC Telemetry v1.0
 Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主要配对/设置代码，并完成Android10模拟器真实联调。按用户最新指令暂停，恢复位置见[工作状态](docs/work-status.md)。
 
-项目私有仓库 https://github.com/Fidrop/pc-telemetry 。另一台设备登录同一GitHub账户后克隆main分支，接续说明见docs/handoff.md。
+项目公开仓库 https://github.com/Fidrop/pc-telemetry ，可匿名访问及克隆main分支，接续说明见docs/handoff.md。
 
 ## 项目资料
 - [完整权威需求](docs/requirements/source-message.md)
