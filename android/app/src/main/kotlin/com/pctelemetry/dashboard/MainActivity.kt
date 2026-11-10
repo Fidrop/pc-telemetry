@@ -8,6 +8,11 @@ import androidx.core.os.LocaleListCompat
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -90,16 +95,23 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
     var pairing by rememberSaveable { mutableStateOf(false) }
     var dismissedInitial by rememberSaveable { mutableStateOf(false) }
     val theme = settings.theme
+    var sportEngineOff by rememberSaveable { mutableStateOf(false) }
+    val showEngineOff = theme == DashboardTheme.SPORT && sportEngineOff
     val values = animatedValues(state)
     val phone by rememberPhoneStatus()
     val phoneDescription = stringResource(R.string.phone_status, phone.time,
         phone.battery.percent?.let { "$it%" } ?: "N/A",
         if (phone.battery.charging) stringResource(R.string.charging) else "")
     val startup = remember { Animatable(0f) }
+    val startupRecovery = remember { Animatable(0f) }
     var selfTest by rememberSaveable { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(selfTest) {
         if (selfTest) {
-            startup.animateTo(1f, tween(600)); startup.animateTo(0f, tween(600)); selfTest = false
+            startup.snapTo(0f); startupRecovery.snapTo(0f)
+            startup.animateTo(0.8f, tween(650, easing = FastOutSlowInEasing))
+            delay(120)
+            startupRecovery.animateTo(1f, tween(650, easing = FastOutSlowInEasing))
+            selfTest = false
         }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -136,7 +148,7 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
         stringResource(R.string.gpu_temperature) + ": " + (metrics?.gpuTemperature?.value ?: "N/A"),
         stringResource(R.string.ram) + ": " + (metrics?.ram?.percent ?: "N/A"),
         stringResource(R.string.vram) + ": " + (metrics?.vram?.percent ?: "N/A")
-    ).joinToString(", ") + ", " + phoneDescription
+    ).joinToString(", ") + ", " + status + ", " + age + ", " + phoneDescription
     var drag by remember { mutableFloatStateOf(0f) }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         .windowInsetsPadding(WindowInsets.displayCutout.union(
@@ -148,15 +160,30 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
                 }
             }) { change, amount -> change.consume(); drag += amount }
         }
-        .pointerInput(Unit) { detectTapGestures(onLongPress = { panel = true }) }) {
+        .pointerInput(showEngineOff) {
+            if (!showEngineOff) detectTapGestures(onLongPress = { panel = true })
+        }) {
         val instruments = Modifier.fillMaxSize().graphicsLayer {
             alpha = if (night) 0.72f else 1f
             translationX = shift.x; translationY = shift.y
         }
         if (theme == DashboardTheme.SPORT) {
-            SportDashboard(values, state, status, age, if (selfTest) startup.value else null, staleLabel,
-                instruments.semantics { contentDescription = "SPORT dashboard"; stateDescription = readingDescription },
-                rogBranding = settings.rogBranding, phone = phone)
+            AnimatedContent(targetState = showEngineOff, modifier = Modifier.fillMaxSize(),
+                transitionSpec = {
+                    (fadeIn(tween(450)) + scaleIn(tween(450), initialScale = 0.97f)) togetherWith fadeOut(tween(250))
+                }, label = "ignition-page") { off ->
+                if (off) {
+                    EngineOffScreen(onStarted = { sportEngineOff = false; selfTest = true }, modifier = instruments)
+                } else {
+                    SportDashboard(values, state, status, age, if (selfTest) startup.value else null, staleLabel,
+                        instruments.semantics {
+                            contentDescription = "SPORT dashboard"
+                            stateDescription = readingDescription + if (selfTest) ", STARTUP SELF TEST" else ""
+                        }, rogBranding = settings.rogBranding, phone = phone,
+                        onEngineStop = { sportEngineOff = true; selfTest = false; panel = false; pairing = false },
+                        selfTestRecovery = startupRecovery.value)
+                }
+            }
         } else {
             HudDashboard(values, state, status, age, { chartOrigin + chartTime.toLong() }, staleLabel,
                 instruments.semantics { contentDescription = "HUD dashboard"; stateDescription = readingDescription },

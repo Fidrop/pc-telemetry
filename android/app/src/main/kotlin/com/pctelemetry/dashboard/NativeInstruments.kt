@@ -74,31 +74,42 @@ private fun number(value: Float?, unit: String = "%") =
 @Composable
 fun SportDashboard(values: InstrumentValues, state: DashboardState, status: String, age: String,
     selfTest: Float?, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true,
-    phone: PhoneStatus = PhoneStatus()) {
+    phone: PhoneStatus = PhoneStatus(), onEngineStop: () -> Unit = {}, selfTestRecovery: Float = 0f) {
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC) } }
     Box(modifier) {
         SportBackground(paint, rogBranding)
         Canvas(Modifier.fillMaxSize()) { design {
-            val cpu = selfTest?.times(100) ?: values.cpu
-            val gpu = selfTest?.times(100) ?: values.gpu
+            fun sweep(live: Float?): Float? {
+                if (selfTest == null) return live
+                if (live == null && selfTestRecovery >= 1f) return null
+                val peak = selfTest * 100f
+                return peak + ((live ?: 0f) - peak) * selfTestRecovery
+            }
+            val cpu = sweep(values.cpu)
+            val gpu = sweep(values.gpu)
             pointer(Offset(470f, 410f), cpu)
             pointer(Offset(1304f, 410f), gpu)
-            label(paint, if (selfTest != null) "SELF TEST" else number(cpu), 470f, 520f, 80f, center = true)
-            label(paint, if (selfTest != null) "SELF TEST" else number(gpu), 1304f, 520f, 80f, center = true)
+            label(paint, number(cpu), 470f, 520f, 80f, center = true)
+            label(paint, number(gpu), 1304f, 520f, 80f, center = true)
             if (selfTest == null && state.snapshot?.metrics?.cpuUsage?.status == "stale")
                 label(paint, staleLabel, 470f, 556f, 23f, Orange, true)
             if (selfTest == null && state.snapshot?.metrics?.gpuUsage?.status == "stale")
                 label(paint, staleLabel, 1304f, 556f, 23f, Orange, true)
-            val cpuTemp = number(values.cpuTemp, "°C") + staleSuffix(state.snapshot?.metrics?.cpuTemperature?.status, staleLabel)
-            val gpuTemp = number(values.gpuTemp, "°C") + staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel)
-            label(paint, if (selfTest != null) "—" else cpuTemp, 470f, 605f, 43f, center = true)
-            label(paint, if (selfTest != null) "—" else gpuTemp, 1304f, 605f, 43f, center = true)
-            label(paint, status, 887f, 535f, 26f, if (state.isOffline) Red else White, true, 190f)
-            label(paint, age, 887f, 573f, 22f, Muted, true, 190f)
-            memory(paint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel)
-            memory(paint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel)
+            val cpuTemp = number(sweep(values.cpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.cpuTemperature?.status, staleLabel) else ""
+            val gpuTemp = number(sweep(values.gpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel) else ""
+            label(paint, cpuTemp, 470f, 605f, 43f, center = true)
+            label(paint, gpuTemp, 1304f, 605f, 43f, center = true)
+            label(paint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 17f,
+                if (selfTest != null) Orange else if (state.isOffline) Red else Silver)
+            label(paint, "ENGINE STOP", 887f, 535f, 27f, White, true, 190f)
+            label(paint, "TAP TO SWITCH OFF", 887f, 568f, 14f, Silver, true, 190f)
+            memory(paint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel,
+                if (selfTest != null) sweep(values.ram?.percent?.toFloat()) else null)
+            memory(paint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel,
+                if (selfTest != null) sweep(values.vram?.percent?.toFloat()) else null)
         } }
         PhoneStatusLayer(paint, phone, sport = true)
+        SportEngineStop(onEngineStop)
     }
 }
 private fun DrawScope.gaugeBackground(paint: Paint, center: Offset, radius: Float) {
@@ -130,16 +141,16 @@ private fun DrawScope.pointer(center: Offset, value: Float?) {
     drawCircle(Silver, 22f, center, style = Stroke(2f))
 }
 private fun DrawScope.memory(paint: Paint, name: String, metric: MemoryMetric?,
-    x: Float, y: Float, width: Float, color: Color, staleLabel: String) {
+    x: Float, y: Float, width: Float, color: Color, staleLabel: String, testPercent: Float? = null) {
     label(paint, name, x, y, 31f, color)
-    val percent = metric?.percent
+    val percent = testPercent?.toDouble() ?: metric?.percent
     label(paint, percent?.let { String.format(Locale.getDefault(), "%.1f%%", it) } ?: "N/A",
         x + 150, y, 42f, color)
-    val capacity = metric?.usedBytes?.let { used ->
+    val capacity = if (testPercent != null) "SELF TEST" else metric?.usedBytes?.let { used ->
         String.format(Locale.getDefault(), "%.1f / %.1f GiB", used / 1073741824.0,
             metric.totalBytes!! / 1073741824.0)
     } ?: "N/A"
-    label(paint, capacity + staleSuffix(metric?.status, staleLabel), x + 395, y, 25f, color)
+    label(paint, capacity + if (testPercent == null) staleSuffix(metric?.status, staleLabel) else "", x + 395, y, 25f, color)
     for (index in 0..19) {
         drawRect(if (percent != null && percent >= (index + 1) * 5) color else Color(0xFF2B3338),
             Offset(x + index * width / 20, y + 25), Size(width / 20 - 4, 17f))

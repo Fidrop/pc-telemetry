@@ -124,6 +124,81 @@ class DashboardInstrumentedTest {
         if (percent != null) assertTrue(status("HUD").contains("battery $percent%"))
     }
 
+    @Test fun sportEngineRequiresHoldAndDoesNotChangeHud() {
+        val model = rule.runOnUiThread {
+            ViewModelProvider(rule.activity)[DashboardViewModel::class.java].also {
+                it.updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+            }
+        }
+        rule.onNodeWithText("Enter DEMO").performClick()
+        rule.onNodeWithTag("engine-stop-control").performClick()
+        rule.onNodeWithTag("engine-off-screen").assertExists()
+        rule.onNodeWithTag("engine-start-button").performClick()
+        rule.onNodeWithTag("engine-off-screen").assertExists()
+
+        holdButton(450)
+        rule.onNodeWithTag("engine-off-screen").assertExists()
+        rule.onAllNodes(isDialog()).assertCountEquals(0)
+        val directory = File(context.getExternalFilesDir(null), "qa").apply { mkdirs() }
+        File(directory, "engine-off.png").outputStream().use {
+            rule.onNodeWithTag("engine-off-screen").captureToImage().asAndroidBitmap()
+                .compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+        rule.onNodeWithTag("engine-off-screen").performTouchInput { swipeLeft() }
+        rule.onNodeWithContentDescription("HUD dashboard").assertExists()
+        rule.onNodeWithTag("engine-start-button").assertDoesNotExist()
+        assertTrue(model.state.value.demo)
+        rule.onNodeWithContentDescription("HUD dashboard").performTouchInput { swipeRight() }
+        rule.onNodeWithTag("engine-off-screen").assertExists()
+        holdButton(700)
+        rule.onNodeWithTag("engine-off-screen").assertExists()
+        holdButton(1150)
+        rule.onNodeWithContentDescription("SPORT dashboard").assertExists()
+        rule.onNodeWithTag("engine-off-screen").assertDoesNotExist()
+        assertTrue(model.state.value.demo)
+        save("sport-engine-on.png")
+    }
+
+    @Test fun sportStartupSweepDoesNotOverwriteTelemetry() {
+        val model = rule.runOnUiThread {
+            ViewModelProvider(rule.activity)[DashboardViewModel::class.java].also {
+                it.updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+            }
+        }
+        rule.onNodeWithText("Enter DEMO").performClick()
+        rule.onNodeWithTag("engine-stop-control").performClick()
+        rule.onNodeWithTag("engine-off-screen").assertExists()
+        rule.mainClock.autoAdvance = false
+        try {
+            holdButton(1150) // Actual Android gesture time; animation time remains controlled separately.
+            rule.mainClock.advanceTimeBy(720)
+            val description = rule.onNodeWithContentDescription("SPORT dashboard")
+                .fetchSemanticsNode().config[SemanticsProperties.StateDescription]
+            assertTrue(description.contains("STARTUP SELF TEST"))
+            val actual = model.state.value.snapshot!!
+            assertTrue(actual.metrics.cpuUsage.value!! < 80)
+            assertEquals(52.0, actual.metrics.ram.percent!!, 0.001)
+            assertEquals(40.0, actual.metrics.vram.percent!!, 0.001)
+            save("sport-startup-80.png")
+            rule.mainClock.advanceTimeBy(1600)
+            assertFalse(rule.onNodeWithContentDescription("SPORT dashboard")
+                .fetchSemanticsNode().config[SemanticsProperties.StateDescription].contains("STARTUP SELF TEST"))
+            rule.onNodeWithTag("engine-off-screen").assertDoesNotExist()
+            save("sport-engine-restored.png")
+        } finally { rule.mainClock.autoAdvance = true }
+    }
+
+    private fun holdButton(milliseconds: Int) {
+        val center = rule.onNodeWithTag("engine-start-button").fetchSemanticsNode().boundsInWindow.center
+        val origin = IntArray(2)
+        rule.runOnUiThread { rule.activity.window.decorView.getLocationOnScreen(origin) }
+        val x = center.x.toInt() + origin[0]; val y = center.y.toInt() + origin[1]
+        val command = "input touchscreen swipe $x $y $x $y $milliseconds"
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(
+            InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command))
+            .bufferedReader().use { it.readText() }
+    }
+
     @Test fun realCollectorAndKeystoreOnAndroid() = runBlocking {
         val pairingText = InstrumentationRegistry.getArguments().getString("livePairingBase64")
         assumeTrue("Explicit live pairing fixture required", !pairingText.isNullOrBlank())

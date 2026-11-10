@@ -28,6 +28,9 @@
     <string name="brand_style">标志样式</string>
     <string name="phone_status">手机时间 %1$s，电量 %2$s %3$s</string>
     <string name="charging">正在充电</string>
+    <string name="engine_stop_description">关闭 SPORT 仪表</string>
+    <string name="engine_hold_description">持续按住 1 秒启动引擎</string>
+    <string name="engine_hold_hint">持续按住启动按钮 1 秒，松开将取消</string>
     <string name="language">语言</string>
     <string name="system">跟随系统</string>
     <string name="night">夜间模式</string>

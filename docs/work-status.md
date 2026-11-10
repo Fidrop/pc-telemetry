@@ -14,3 +14,5 @@
 当前Android版本1.0-preview5：SPORT/HUD数码时钟加大数字间距，保留字号、居中与冒号分组；构建和截图见clock-spacing相关记录。
 
 当前Android1.0-preview6：修正数字1的不可见整格留白，改善冒号与11之间的间距；见clock-battery-report.md最新补充与clock-kerning记录。
+
+当前Android1.0-preview7：SPORT ENGINE STOP/全屏ENGINE OFF/按住1秒启动、轻触感、页面过渡和约80%启动自检；HUD独立。交互和数据隔离检查通过，见docs/engine-control-report.md。

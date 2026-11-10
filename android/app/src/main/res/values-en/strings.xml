@@ -28,6 +28,9 @@
     <string name="brand_style">Emblem style</string>
     <string name="phone_status">Phone time %1$s, battery %2$s %3$s</string>
     <string name="charging">Charging</string>
+    <string name="engine_stop_description">Turn off SPORT instruments</string>
+    <string name="engine_hold_description">Hold for 1 second to start engine</string>
+    <string name="engine_hold_hint">HOLD FOR 1 SECOND TO START · RELEASE TO CANCEL</string>
     <string name="language">Language</string>
     <string name="system">System</string>
     <string name="night">Night mode</string>
