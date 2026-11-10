@@ -13,8 +13,15 @@ Windows阶段1只监听127.0.0.1。发现、正式配对、托盘和自启归阶
 原电脑CPU/GPU使用率和RAM可用，温度与专用VRAM不可用。短测工作集超过80MB，后续需优化。
 
 ## GitHub
-连接身份Fidrop，连接器未返回可访问仓库，未提供创建仓库入口，本机未找到gh。本次继续ZIP快照，没有创建或推送远程仓库。
-持续跨设备开发可使用用户提供的私有仓库URL，初始化Git后提交推送。换设备前提交推送，开始工作前拉取。
+已通过GitHub官方CLI创建私有仓库 https://github.com/Fidrop/pc-telemetry ，当前分支main，阶段1源码、两张设计图与测试记录已推送。
+原电脑项目专用CLI位于.tools/github-cli/bin/gh.exe，通过官方发布文件校验SHA-256后安装，认证保存在Windows凭据存储中。CLI、凭据与SDK均不进入仓库或源码包。
+另一台电脑先登录有该私有仓库权限的GitHub账户，然后执行
+```powershell
+git clone https://github.com/Fidrop/pc-telemetry.git
+cd pc-telemetry
+```
+在Codex中打开克隆目录，按上述阅读顺序检查需求与阶段状态。换设备前提交并推送，开始工作前先拉取最新main。
+本次Git提交使用Fidrop及GitHub noreply邮箱，配置仅限本项目。
 
 ## 阶段门禁
 阶段1完成后停止等待用户确认。明确确认阶段1并开始阶段2后，再开发Android。每阶段确认来自最初需求，迁移文件不触发后续阶段。

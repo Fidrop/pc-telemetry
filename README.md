@@ -1,6 +1,8 @@
 # PC Telemetry v1.0
 Windows Collector + Android Dashboard。阶段1已实现Windows真实采集与本机加密通信，等待用户确认进入阶段2。
 
+项目私有仓库 https://github.com/Fidrop/pc-telemetry 。另一台设备登录同一GitHub账户后克隆main分支，接续说明见docs/handoff.md。
+
 ## 项目资料
 - [完整权威需求](docs/requirements/source-message.md)
 - [阶段0报告](docs/stage-0-report.md)
