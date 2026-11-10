@@ -1,0 +1,8 @@
+﻿{
+    "CollectorExit":  0,
+    "ProbeExit":  0,
+    "IsAdministrator":  false,
+    "LogicalProcessors":  8,
+    "Samples":  120,
+    "RuntimeDirectory":  "D:\\perf_monitor\\runtime\\live-20261110-145519"
+}

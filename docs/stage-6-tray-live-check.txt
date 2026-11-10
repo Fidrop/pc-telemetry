@@ -1,0 +1,2 @@
+PASS: pinned TLS, authenticated WSS, 8 valid live snapshots.
+PASS 120 real snapshots, authenticated probe, process measurements, normal shutdown.

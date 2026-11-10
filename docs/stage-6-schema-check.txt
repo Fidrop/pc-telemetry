@@ -1,0 +1,1 @@
+PASS schema validation: 120 stage6 live samples

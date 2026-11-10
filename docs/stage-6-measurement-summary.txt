@@ -1,0 +1,74 @@
+{
+    "Samples":  120,
+    "IntervalMilliseconds":  {
+                                 "Count":  119,
+                                 "Minimum":  928.8517,
+                                 "Maximum":  1078.9267,
+                                 "Average":  1009.0969495798315,
+                                 "P50":  1009.8935,
+                                 "P95":  1052.5263,
+                                 "P99":  1078.0161
+                             },
+    "GpuStates":  [
+                      {
+                          "Name":  "ok",
+                          "Count":  120
+                      }
+                  ],
+    "MachineCpuPercent":  {
+                              "Count":  96,
+                              "Minimum":  0,
+                              "Maximum":  1.09073921074181,
+                              "Average":  0.13255067630431283,
+                              "P50":  0,
+                              "P95":  0.650229205274676,
+                              "P99":  1.09073921074181
+                          },
+    "WorkingSetMiB":  {
+                          "Count":  96,
+                          "Minimum":  199.40625,
+                          "Maximum":  209.96484375,
+                          "Average":  206.36283365885416,
+                          "P50":  206.78125,
+                          "P95":  209.78125,
+                          "P99":  209.96484375
+                      },
+    "PrivateMiB":  {
+                       "Count":  96,
+                       "Minimum":  36.79296875,
+                       "Maximum":  43.07421875,
+                       "Average":  39.982381184895836,
+                       "P50":  39.78515625,
+                       "P95":  42.88671875,
+                       "P99":  43.07421875
+                   },
+    "SensorUpdateMilliseconds":  [
+                                     {
+                                         "Group":  "/intelcpu/0",
+                                         "Statistics":  {
+                                                            "Count":  120,
+                                                            "Minimum":  0.4969,
+                                                            "Maximum":  76.0428,
+                                                            "Average":  8.8680783333333331,
+                                                            "P50":  4.4191,
+                                                            "P95":  36.9319,
+                                                            "P99":  69.0067
+                                                        }
+                                     },
+                                     {
+                                         "Group":  "/gpu-intel-integrated/%5C%5C%3F%5CPCI%23VEN_8086%26DEV_64A0%26SUBSYS_1D05C011%26REV_04%233%2611583659%261%2610%23%7B1ca05180-a699-450a-9a0c-de4fbe3ddd89%7D",
+                                         "Statistics":  {
+                                                            "Count":  120,
+                                                            "Minimum":  0.1178,
+                                                            "Maximum":  0.5969,
+                                                            "Average":  0.20124,
+                                                            "P50":  0.183,
+                                                            "P95":  0.316,
+                                                            "P99":  0.4757
+                                                        }
+                                     }
+                                 ],
+    "ApplicationJsonBytes":  160048,
+    "RestartCount":  0,
+    "Scope":  "Short diagnostic run, 5s process warmup excluded, Collector + worker + console host, probe excluded. No game baseline or wire traffic measurement."
+}
