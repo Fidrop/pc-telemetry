@@ -10,3 +10,5 @@
 当前Android版本1.0-preview3：SPORT只保留中央品牌标志；两主题新增本地24小时七段时钟、手机电量与充电/低电量提示。结果见docs/clock-battery-report.md，补充范围见docs/requirements/addenda.md。
 
 当前Android版本1.0-preview4：SPORT顶部10格灯条改为手机电量，数字与图标移至其上方；颜色阈值及验证见docs/sport-battery-bar-report.md。
+
+当前Android版本1.0-preview5：SPORT/HUD数码时钟加大数字间距，保留字号、居中与冒号分组；构建和截图见clock-spacing相关记录。

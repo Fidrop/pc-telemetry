@@ -27,7 +27,7 @@ internal fun PhoneStatusLayer(paint: Paint, phone: PhoneStatus, sport: Boolean) 
 internal fun DrawScope.segmentTime(time: String, centerX: Float, top: Float, height: Float, color: Color) {
     val digitWidth = height * 0.54f
     val colonWidth = height * 0.16f
-    val gap = height * 0.14f
+    val gap = height * 0.26f
     val total = time.sumOf { if (it == ':') colonWidth.toDouble() else digitWidth.toDouble() }.toFloat() + gap * (time.length - 1)
     var x = centerX - total / 2
     val masks = intArrayOf(0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F)
