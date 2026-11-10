@@ -12,3 +12,5 @@
 当前Android版本1.0-preview4：SPORT顶部10格灯条改为手机电量，数字与图标移至其上方；颜色阈值及验证见docs/sport-battery-bar-report.md。
 
 当前Android版本1.0-preview5：SPORT/HUD数码时钟加大数字间距，保留字号、居中与冒号分组；构建和截图见clock-spacing相关记录。
+
+当前Android1.0-preview6：修正数字1的不可见整格留白，改善冒号与11之间的间距；见clock-battery-report.md最新补充与clock-kerning记录。

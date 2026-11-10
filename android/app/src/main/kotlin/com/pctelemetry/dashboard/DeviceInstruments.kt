@@ -26,9 +26,15 @@ internal fun PhoneStatusLayer(paint: Paint, phone: PhoneStatus, sport: Boolean) 
 // Seven-segment glyphs, not a font substitution. Colons remain steady for readability.
 internal fun DrawScope.segmentTime(time: String, centerX: Float, top: Float, height: Float, color: Color) {
     val digitWidth = height * 0.54f
+    val thickness = height * 0.085f
     val colonWidth = height * 0.16f
     val gap = height * 0.26f
-    val total = time.sumOf { if (it == ':') colonWidth.toDouble() else digitWidth.toDouble() }.toFloat() + gap * (time.length - 1)
+    fun glyphWidth(character: Char) = when (character) {
+        ':' -> colonWidth
+        '1' -> thickness
+        else -> digitWidth + thickness
+    }
+    val total = time.sumOf { glyphWidth(it).toDouble() }.toFloat() + gap * (time.length - 1)
     var x = centerX - total / 2
     val masks = intArrayOf(0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F)
     for (character in time) {
@@ -38,8 +44,9 @@ internal fun DrawScope.segmentTime(time: String, centerX: Float, top: Float, hei
             continue
         }
         val mask = character.digitToIntOrNull()?.let { masks[it] } ?: 0x40
-        withTransform({ translate(x, top) }) {
-            val w = digitWidth; val h = height; val t = height * 0.085f
+        // A lit "1" occupies only its vertical strokes; do not reserve an invisible full digit box.
+        withTransform({ translate(x + thickness / 2 - if (character == '1') digitWidth else 0f, top) }) {
+            val w = digitWidth; val h = height; val t = thickness
             val segments = listOf(
                 Offset(t, 0f) to Offset(w - t, 0f),
                 Offset(w, t) to Offset(w, h / 2 - t),
@@ -51,10 +58,11 @@ internal fun DrawScope.segmentTime(time: String, centerX: Float, top: Float, hei
             for ((index, ends) in segments.withIndex()) {
                 val enabled = mask and (1 shl index) != 0
                 if (enabled) drawLine(color.copy(alpha = 0.08f), ends.first, ends.second, t * 2.4f, StrokeCap.Square)
-                drawLine(if (enabled) color else color.copy(alpha = 0.055f), ends.first, ends.second, t, StrokeCap.Butt)
+                if (enabled || character != '1')
+                    drawLine(if (enabled) color else color.copy(alpha = 0.055f), ends.first, ends.second, t, StrokeCap.Butt)
             }
         }
-        x += digitWidth + gap
+        x += glyphWidth(character) + gap
     }
 }
 
