@@ -1,0 +1,5 @@
+  正在确定要还原的项目…
+  已还原 D:\perf_monitor\windows\Collector\Collector.csproj (用时 472 毫秒)。
+  Collector -> D:\perf_monitor\windows\Collector\bin\Release\net8.0-windows\win-x64\Collector.dll
+  Collector -> D:\perf_monitor\artifacts\PC-Telemetry-Windows-x64-noconsole\
+Self-contained Windows x64 folder: D:\perf_monitor\artifacts\PC-Telemetry-Windows-x64-noconsole

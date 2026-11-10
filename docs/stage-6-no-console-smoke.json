@@ -1,0 +1,7 @@
+{
+  "PESubsystem": 2,
+  "TrayExit": 0,
+  "ProbeExit": 0,
+  "ProbeResult": "PASS: pinned TLS, authenticated WSS, 3 valid live snapshots.\r\n",
+  "TrayError": null
+}
