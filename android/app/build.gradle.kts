@@ -10,8 +10,8 @@ android {
         applicationId = "com.pctelemetry.dashboard"
         minSdk = 29
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0-preview3"
+        versionCode = 5
+        versionName = "1.0-preview4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }

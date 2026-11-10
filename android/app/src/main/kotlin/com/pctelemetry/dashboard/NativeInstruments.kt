@@ -93,13 +93,6 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             val gpuTemp = number(values.gpuTemp, "°C") + staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel)
             label(paint, if (selfTest != null) "—" else cpuTemp, 470f, 605f, 43f, center = true)
             label(paint, if (selfTest != null) "—" else gpuTemp, 1304f, 605f, 43f, center = true)
-            val load = maxOf(cpu ?: 0f, gpu ?: 0f)
-            for (index in 0..8) {
-                val color = if (load < (index + 1) * 100f / 9) Color(0xFF363B3E)
-                    else if (index < 6) Color(0xFFFFC23A) else Red
-                drawRoundRect(color, Offset(652f + index * 55, 92f), Size(43f, 16f),
-                    androidx.compose.ui.geometry.CornerRadius(8f))
-            }
             label(paint, status, 887f, 535f, 26f, if (state.isOffline) Red else White, true, 190f)
             label(paint, age, 887f, 573f, 22f, Muted, true, 190f)
             memory(paint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel)

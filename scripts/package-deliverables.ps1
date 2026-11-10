@@ -24,6 +24,9 @@ if (Test-Path "$root/docs/visual-revision-report.md") {
 if (Test-Path "$root/docs/clock-battery-report.md") {
     Copy-Item "$root/docs/clock-battery-report.md" "$folder/时间与电量更新说明.md"
 }
+if (Test-Path "$root/docs/sport-battery-bar-report.md") {
+    Copy-Item "$root/docs/sport-battery-bar-report.md" "$folder/SPORT电量灯条说明.md"
+}
 $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source commit' }
 [ordered]@{ SourceCommit = $sourceCommit; BuiltAt = (Get-Date).ToString('o');

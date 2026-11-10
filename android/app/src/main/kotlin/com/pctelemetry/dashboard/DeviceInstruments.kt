@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.clipRect
 
 @Composable
 internal fun PhoneStatusLayer(paint: Paint, phone: PhoneStatus, sport: Boolean) {
@@ -58,6 +59,23 @@ internal fun DrawScope.segmentTime(time: String, centerX: Float, top: Float, hei
 }
 
 internal fun DrawScope.sportPhoneStatus(paint: Paint, phone: PhoneStatus) {
+    val percent = phone.battery.percent
+    val batteryColor = when {
+        percent == null -> Silver
+        percent > 60 -> Color(0xFF51E596)
+        percent >= 20 -> Color(0xFFFFC23A)
+        else -> Red
+    }
+    phoneBattery(paint, phone.battery, Offset(804f, 42f), batteryColor, compact = false)
+    for (index in 0..9) {
+        val origin = Offset(618f + index * 55f, 92f)
+        val size = Size(43f, 16f)
+        drawRoundRect(Color(0xFF30383C), origin, size, CornerRadius(8f))
+        val fraction = percent?.let { ((it - index * 10) / 10f).coerceIn(0f, 1f) } ?: 0f
+        if (fraction > 0f) clipRect(origin.x, origin.y, origin.x + size.width * fraction, origin.y + size.height) {
+            drawRoundRect(batteryColor, origin, size, CornerRadius(8f))
+        }
+    }
     // Recessed cluster display: silver bezel, red keyline and smoked glass.
     drawRoundRect(Brush.verticalGradient(listOf(Color(0xFF667078), Color(0xFF171D23)), 610f, 679f),
         Offset(767f, 610f), Size(240f, 69f), CornerRadius(7f))
@@ -65,9 +83,6 @@ internal fun DrawScope.sportPhoneStatus(paint: Paint, phone: PhoneStatus) {
     drawLine(Red.copy(alpha = 0.65f), Offset(786f, 675f), Offset(988f, 675f), 1f)
     label(paint, "LOCAL TIME", 887f, 628f, 10f, Silver, true)
     segmentTime(phone.time, 887f, 636f, 29f, White)
-    drawRoundRect(Color(0xFF101519), Offset(807f, 684f), Size(160f, 36f), CornerRadius(4f))
-    drawRoundRect(Silver.copy(alpha = 0.35f), Offset(807f, 684f), Size(160f, 36f), CornerRadius(4f), style = Stroke(1f))
-    phoneBattery(paint, phone.battery, Offset(821f, 694f), White, compact = true)
 }
 
 internal fun DrawScope.hudPhoneStatus(paint: Paint, phone: PhoneStatus) {
