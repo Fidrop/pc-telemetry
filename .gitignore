@@ -1,0 +1,13 @@
+.idea/
+.vs/
+.gradle/
+**/build/
+**/bin/
+**/obj/
+android/local.properties
+artifacts/
+*.user
+*.pfx
+*.key
+.tools/
+runtime/

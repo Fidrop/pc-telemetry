@@ -1,0 +1,52 @@
+PASS CPU total mapping
+PASS CPU Package priority
+PASS CPU hottest core fallback
+PASS CPU missing stays null
+PASS CPU invalid load rejected
+PASS GPU core mapping
+PASS GPU temperature mapping
+PASS Non-finite sensor rejected
+PASS Dedicated VRAM bytes and percent
+PASS Integrated shared memory excluded
+PASS Missing VRAM total stays null
+PASS Invalid capacity rejected
+PASS Zero total rejected
+PASS Zero usage is valid
+PASS Default discrete GPU
+PASS Manual GPU selection
+PASS Unknown GPU does not select another
+PASS Intel mobile Arc stays integrated
+PASS Intel discrete Arc recognized
+PASS Three slow updates throttle group
+PASS Fast recovery restores 1Hz
+PASS Failure throttles group
+PASS Stale retains original time and value
+PASS Protocol round trip telemetry.demo.json
+PASS Protocol round trip telemetry.missing.demo.json
+PASS Unknown protocol version
+PASS Out-of-range percent
+PASS Unavailable value rejected
+PASS Capacity mismatch rejected
+PASS Unknown JSON fields rejected
+PASS Required sequence field enforced
+PASS DPAPI identity and certificate persist
+PASS Invalid token rejected
+PASS Valid token accepted
+PASS Token absent from stored ciphertext
+PASS Slow subscriber retains latest only
+PASS GPU choice rejects unknown
+PASS GPU choice persists
+PASS TLS wrong certificate pin rejected
+PASS WSS incorrect credential rejected
+PASS WSS valid credential accepted
+PASS Authenticated hello lists GPUs
+PASS WSS snapshot uses expected identity
+PASS GPU selection acknowledgement
+PASS Old GPU snapshot suppressed after acknowledgement
+PASS Unknown GPU command returns error
+PASS Selected GPU resumes telemetry
+PASS Worker pipe receives fixture snapshot
+Sensor worker unavailable; retaining stale values and scheduling recovery.
+PASS Hung worker is recycled and retains stale data
+PASS Replacement worker excludes quarantined group
+RESULT 50 checks passed. Hardware compatibility and performance are tested separately.

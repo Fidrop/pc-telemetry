@@ -1,0 +1,2 @@
+PASS: 15 requirement sections; 6 directories; 2 DEMO fixtures; JSON syntax; fixture semantic checks; Windows XML syntax.
+NOT RUN: full schema validation, production tests, dependency restore, APK/EXE build, hardware/performance tests.

@@ -1,0 +1,19 @@
+{
+  "os": {
+    "Caption": "Microsoft Windows 11 企业版",
+    "Version": "10.0.26300",
+    "OSArchitecture": "64 位"
+  },
+  "cpu": {
+    "Name": "Intel(R) Core(TM) Ultra 5 226V",
+    "NumberOfLogicalProcessors": 8
+  },
+  "gpu": [
+    {
+      "Name": "GameViewer Virtual Display Adapter"
+    },
+    {
+      "Name": "Intel(R) Arc(TM) 130V GPU (8GB)"
+    }
+  ]
+}

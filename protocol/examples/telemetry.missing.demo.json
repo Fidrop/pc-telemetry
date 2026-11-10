@@ -1,0 +1,56 @@
+{
+  "type": "telemetry",
+  "version": 1,
+  "deviceId": "fixture-pc",
+  "sessionId": "fixture-session",
+  "sequence": 2,
+  "sampledAt": "2026-11-10T00:00:00Z",
+  "mode": "demo",
+  "gpu": {
+    "id": "fixture-gpu",
+    "name": "Synthetic test GPU",
+    "kind": "discrete"
+  },
+  "metrics": {
+    "cpuUsage": {
+      "value": 25,
+      "status": "ok",
+      "sampledAt": "2026-11-10T00:00:00Z",
+      "source": "fixture"
+    },
+    "gpuUsage": {
+      "value": 50,
+      "status": "ok",
+      "sampledAt": "2026-11-10T00:00:00Z",
+      "source": "fixture"
+    },
+    "ram": {
+      "usedBytes": 8589934592,
+      "totalBytes": 17179869184,
+      "percent": 50,
+      "status": "ok",
+      "sampledAt": "2026-11-10T00:00:00Z",
+      "source": "fixture"
+    },
+    "vram": {
+      "usedBytes": null,
+      "totalBytes": null,
+      "percent": null,
+      "status": "unavailable",
+      "sampledAt": null,
+      "source": null
+    },
+    "cpuTemperature": {
+      "value": null,
+      "status": "unavailable",
+      "sampledAt": null,
+      "source": null
+    },
+    "gpuTemperature": {
+      "value": 60,
+      "status": "ok",
+      "sampledAt": "2026-11-10T00:00:00Z",
+      "source": "fixture"
+    }
+  }
+}

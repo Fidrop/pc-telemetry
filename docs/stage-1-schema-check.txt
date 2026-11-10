@@ -1,0 +1,1 @@
+PASS JSON Schema validation: 2 DEMO fixtures and 35 recorded live snapshots.
