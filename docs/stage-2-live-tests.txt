@@ -1,0 +1,15 @@
+> Task :telemetry-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :telemetry-core:processResources NO-SOURCE
+> Task :telemetry-core:processTestResources NO-SOURCE
+> Task :telemetry-core:compileKotlin
+> Task :telemetry-core:compileJava NO-SOURCE
+> Task :telemetry-core:classes UP-TO-DATE
+> Task :telemetry-core:jar
+> Task :telemetry-core:compileTestKotlin
+> Task :telemetry-core:compileTestJava NO-SOURCE
+> Task :telemetry-core:testClasses UP-TO-DATE
+> Task :telemetry-core:test
+
+BUILD SUCCESSFUL in 16s
+4 actionable tasks: 4 executed
+PASS Android shared core connected to a real Windows Collector. No physical Android device was involved.

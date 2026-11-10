@@ -11,3 +11,6 @@ artifacts/
 *.key
 .tools/
 runtime/
+**/.kotlin/
+*.keystore
+*.jks

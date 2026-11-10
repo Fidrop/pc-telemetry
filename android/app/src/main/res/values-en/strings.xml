@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">PC Telemetry</string>
+    <string name="connection">Connection</string>
+    <string name="development_connection">Stage 2 development connection</string>
+    <string name="endpoint">WSS endpoint</string>
+    <string name="fingerprint">Certificate SHA-256 fingerprint</string>
+    <string name="device_id">Device ID</string>
+    <string name="credential_id">Development credential ID</string>
+    <string name="token">Development token</string>
+    <string name="connect">Save and connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="demo">Enter DEMO</string>
+    <string name="exit_demo">Exit DEMO</string>
+    <string name="demo_status">DEMO · Simulated data</string>
+    <string name="offline">OFFLINE · Stale data</string>
+    <string name="online">ONLINE</string>
+    <string name="connecting">Reconnecting</string>
+    <string name="waiting">Waiting for valid data</string>
+    <string name="age">Data age %1$.1f s</string>
+    <string name="history_count">Valid samples in 60 s %1$d</string>
+    <string name="cpu_usage">CPU usage</string>
+    <string name="gpu_usage">GPU usage</string>
+    <string name="cpu_temperature">CPU temperature</string>
+    <string name="gpu_temperature">GPU temperature</string>
+    <string name="ram">Physical memory RAM</string>
+    <string name="vram">Dedicated VRAM</string>
+    <string name="stale">Stale</string>
+    <string name="invalid_profile">Check the endpoint, 64-character fingerprint, device ID and development credentials.</string>
+    <string name="storage_error">Secure configuration could not be read. Enter connection details again.</string>
+    <string name="authentication_error">Authentication failed. Check development credentials.</string>
+    <string name="certificate_error">Certificate verification failed. Check the fingerprint on the PC.</string>
+    <string name="protocol_error">Protocol or device identity mismatch. Check connection details.</string>
+    <string name="development_note">Connect only after checking the certificate fingerprint. The production pairing wizard follows in a later stage.</string>
+    <string name="cancel">Cancel</string>
+</resources>
