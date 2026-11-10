@@ -4,6 +4,12 @@ using System.Text;
 using System.Text.Json;
 using PcTelemetry;
 
+if (args.Length == 2 && args[0] == "--pairing-host")
+{
+    await PairingFixtureHost.RunAsync(args[1]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--fixture-worker")
 {
     await WorkerFixture.RunAsync(args[1]);
@@ -106,8 +112,31 @@ Check("GPU choice rejects unknown", !service.SelectGpu("invalid"));
 Check("GPU choice persists", service.SelectGpu("igpu") &&
     new TelemetryService(identity.Secrets.DeviceId, testDirectory, null).SelectedGpu == "igpu");
 service.SelectGpu("dgpu");
+var pairingTime = DateTimeOffset.UtcNow;
+var pairing = new PairingService(testDirectory, () => pairingTime);
+var pairingWindow = pairing.OpenWindow();
+for (var attempt = 0; attempt < 5; attempt++) pairing.TryPair("invalid", out _);
+Check("Pairing locks after five failures", !pairing.TryPair(pairingWindow.Code, out _));
+pairingWindow = pairing.OpenWindow();
+pairingTime = pairingTime.AddSeconds(120);
+Check("Pairing expires at 120 seconds", !pairing.TryPair(pairingWindow.Code, out _));
+pairingWindow = pairing.OpenWindow();
+Check("One-time pairing issues random credential", pairing.TryPair(pairingWindow.Code, out var issued) &&
+    issued is not null && Convert.FromBase64String(issued.Token).Length == 32);
+Check("Pairing code consumed once", !pairing.TryPair(pairingWindow.Code, out _));
+Check("Paired credential authenticates", pairing.Authenticate(issued!.CredentialId, issued.Token));
+Check("Paired credential persists under DPAPI", new PairingService(testDirectory).Authenticate(issued.CredentialId, issued.Token));
+pairing.Revoke(issued.CredentialId);
+Check("Revocation invalidates credential", !pairing.Authenticate(issued.CredentialId, issued.Token));
+pairingWindow = pairing.OpenWindow();
+var successfulPairs = 0;
+Parallel.For(0, 8, index => { if (pairing.TryPair(pairingWindow.Code, out _)) Interlocked.Increment(ref successfulPairs); });
+Check("Concurrent pairing consumes code atomically", successfulPairs == 1);
+pairingWindow = pairing.OpenWindow();
+pairing.CloseWindow();
+Check("Closing pairing window cancels code", !pairing.TryPair(pairingWindow.Code, out _));
 
-await using var server = WebSocketServer.Create(0, identity, service);
+await using var server = WebSocketServer.Create(0, identity, service, pairing);
 await server.StartAsync();
 var address = new Uri(server.Urls.Single().Replace("https://", "wss://") + "/v1/stream");
 using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -172,6 +201,29 @@ using (var client = Client(true))
     service.Publish(frame with { Gpu = integrated }, 5);
     Check("Selected GPU resumes telemetry", (await Receive(client, "telemetry")).GetProperty("gpu").GetProperty("id").GetString() == "igpu");
     client.Abort();
+}
+var wireWindow = pairing.OpenWindow();
+string pairedId;
+string pairedToken;
+using (var pairClient = Client(true))
+{
+    await pairClient.ConnectAsync(address, deadline.Token);
+    await Send(pairClient, new { type = "pair.request", version = 1, requestId = "pair-wire", code = wireWindow.Code });
+    var result = await Receive(pairClient, "pair.result");
+    Check("Pinned WSS pairing returns credential once", result.GetProperty("success").GetBoolean());
+    pairedId = result.GetProperty("credentialId").GetString()!;
+    pairedToken = result.GetProperty("token").GetString()!;
+}
+using (var pairedClient = Client(true))
+{
+    await pairedClient.ConnectAsync(address, deadline.Token);
+    await Send(pairedClient, new { type = "auth", version = 1, credentialId = pairedId, token = pairedToken });
+    Check("Paired WSS credential authenticates", (await Receive(pairedClient, "auth.result")).GetProperty("success").GetBoolean());
+    await Receive(pairedClient, "hello");
+    await Receive(pairedClient, "telemetry");
+    await Send(pairedClient, new { type = "unpair", version = 1, requestId = "remove-pair" });
+    Check("Authenticated unpair acknowledged", (await Receive(pairedClient, "unpair.result")).GetProperty("success").GetBoolean());
+    Check("Unpair removes long-term credential", !pairing.Authenticate(pairedId, pairedToken));
 }
 await server.StopAsync();
 await using (var worker = new WorkerSupervisor(pipeName =>

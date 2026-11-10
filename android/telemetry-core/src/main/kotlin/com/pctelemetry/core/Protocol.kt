@@ -69,7 +69,7 @@ object Protocol {
         require(snapshot.type == "telemetry" && snapshot.version == 1)
         require(snapshot.deviceId.isNotBlank() && snapshot.sessionId.isNotBlank())
         require(snapshot.sequence in 0..MAX_INTEGER && snapshot.mode in setOf("live", "demo"))
-        val envelopeTime = Instant.parse(snapshot.sampledAt)
+        val envelopeTime = timestamp(snapshot.sampledAt)
         snapshot.gpu?.let(::validateGpu)
         with(snapshot.metrics) {
             validateMetric(cpuUsage, true, envelopeTime)
@@ -89,7 +89,7 @@ object Protocol {
     private fun validateTime(status: String, timestamp: String?, source: String?, envelope: Instant) {
         require(status in setOf("ok", "stale"))
         require(!source.isNullOrBlank())
-        val time = Instant.parse(requireNotNull(timestamp))
+        val time = timestamp(requireNotNull(timestamp))
         require(!time.isAfter(envelope))
         // Compare within the sender's clock domain. Local wall-clock skew does not cause false offline.
         if (status == "ok") require(!time.isBefore(envelope.minusSeconds(5)))
@@ -119,4 +119,6 @@ object Protocol {
         require(percent.isFinite() && percent in 0.0..100.0 &&
             kotlin.math.abs(100.0 * used / total - percent) <= 0.05)
     }
+    // Android 10's ISO_INSTANT parser is less permissive than newer desktop JDKs.
+    private fun timestamp(value: String): Instant = java.time.OffsetDateTime.parse(value).toInstant()
 }

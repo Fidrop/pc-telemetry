@@ -30,6 +30,11 @@ class TelemetryTests {
                 assertEquals(fixture, Protocol.decode(Protocol.json.encodeToString(fixture)))
             }
     }
+    @Test fun windowsOffsetTimestampFixture() {
+        val captured = File(System.getProperty("protocolRoot")).parentFile
+            .resolve("docs/stage-1-live-snapshots.jsonl").useLines { it.first() }
+        assertEquals("live", Protocol.decode(captured).mode)
+    }
     @Test fun requiredAndUnknownFieldsRejected() {
         val encoded = Protocol.json.encodeToString(snapshot())
         rejected { Protocol.decode(encoded.replace("\"sequence\":1,", "")) }

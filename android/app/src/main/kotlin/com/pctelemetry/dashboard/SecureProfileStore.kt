@@ -17,7 +17,7 @@ import javax.crypto.spec.GCMParameterSpec
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 
-private val Context.profileDataStore by preferencesDataStore("connection")
+internal val Context.profileDataStore by preferencesDataStore("connection")
 
 class SecureProfileStore(private val context: Context) {
     private val entry = stringPreferencesKey("encrypted_profile")
@@ -54,4 +54,5 @@ class SecureProfileStore(private val context: Context) {
             context.profileDataStore.edit { it[entry] = Base64.encodeToString(encrypted, Base64.NO_WRAP) }
         } finally { plaintext.fill(0) }
     }
+    suspend fun clear() { context.profileDataStore.edit { it.remove(entry) } }
 }

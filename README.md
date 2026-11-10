@@ -1,5 +1,5 @@
 # PC Telemetry v1.0
-Windows Collector + Android Dashboard。阶段1已实现Windows真实采集与本机加密通信，等待用户确认进入阶段2。
+Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主要配对/设置代码，并完成Android10模拟器真实联调。按用户最新指令暂停，恢复位置见[工作状态](docs/work-status.md)。
 
 项目私有仓库 https://github.com/Fidrop/pc-telemetry 。另一台设备登录同一GitHub账户后克隆main分支，接续说明见docs/handoff.md。
 
@@ -7,6 +7,9 @@ Windows Collector + Android Dashboard。阶段1已实现Windows真实采集与�
 - [完整权威需求](docs/requirements/source-message.md)
 - [阶段0报告](docs/stage-0-report.md)
 - [阶段1报告](docs/stage-1-report.md)
+- [阶段3记录](docs/stage-3-report.md)
+- [阶段4记录](docs/stage-4-report.md)
+- [阶段5检查点](docs/stage-5-report.md)
 - [依赖与工程方案](docs/architecture.md)
 - [协议草案](protocol/README.md)
 - [安全方案](docs/security.md)
@@ -27,5 +30,5 @@ Windows x64，安装.NET8 SDK（global.json约束8.0.4xx功能带）后，在Pow
 ./scripts/package-project.ps1 -Stage stage1
 ```
 构建脚本也支持本项目.tools/dotnet内的独立SDK，SDK与缓存不随源码包迁移。
-阶段1为控制台开发入口，WSS仅监听127.0.0.1，使用本账户的加密开发凭据。Android和正式配对流程尚待后续阶段。
+当前Windows无参数启动进入托盘，控制台调试默认回环，--lan允许绑定私有网络地址。Android已有Debug构建与配对代码，阶段6发布验收尚未执行。
 源码压缩包不包含SDK、凭据和构建输出。阶段6再交付自包含便携EXE与APK。

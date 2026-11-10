@@ -1,0 +1,14 @@
+> Task :telemetry-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :telemetry-core:compileKotlin UP-TO-DATE
+> Task :telemetry-core:compileJava NO-SOURCE
+> Task :telemetry-core:processResources NO-SOURCE
+> Task :telemetry-core:classes UP-TO-DATE
+> Task :telemetry-core:jar UP-TO-DATE
+> Task :telemetry-core:processTestResources NO-SOURCE
+> Task :telemetry-core:compileTestKotlin
+> Task :telemetry-core:compileTestJava NO-SOURCE
+> Task :telemetry-core:testClasses UP-TO-DATE
+> Task :telemetry-core:test
+
+BUILD SUCCESSFUL in 2s
+4 actionable tasks: 2 executed, 2 up-to-date

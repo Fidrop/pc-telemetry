@@ -11,6 +11,10 @@ public sealed class TelemetryService
     private string? selectedGpu;
     private GpuInfo[] gpus = [];
     private Broadcast? latest;
+    private int connections;
+    public int ConnectionCount => Volatile.Read(ref connections);
+    public void ClientConnected() => Interlocked.Increment(ref connections);
+    public void ClientDisconnected() => Interlocked.Decrement(ref connections);
     public string DeviceId { get; }
     public string SessionId { get; } = Guid.NewGuid().ToString();
 

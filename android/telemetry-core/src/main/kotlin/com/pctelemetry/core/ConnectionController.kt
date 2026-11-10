@@ -35,18 +35,31 @@ class ConnectionController(
         data class Connect(val profile: ConnectionProfile) : Command
         data object Demo : Command
         data class Stop(val keepAging: Boolean) : Command
+        data class SelectGpu(val id: String) : Command
     }
-    private val commands = Channel<Command>(1, BufferOverflow.DROP_OLDEST)
+    private val commands = Channel<Command>(64)
     private val gate = Mutex()
     private val model = SnapshotState(clock)
     private val mutableState = MutableStateFlow(model.state)
     val state = mutableState.asStateFlow()
     private var previousProfile: ConnectionProfile? = null
+    private var activeSocket: TelemetrySocket? = null
 
     init {
         scope.launch {
             var active: Job? = null
             for (command in commands) {
+                if (command is Command.SelectGpu) {
+                    gate.withLock {
+                        try {
+                            activeSocket?.send(buildJsonObject {
+                                put("type", "gpu.select"); put("version", 1)
+                                put("requestId", java.util.UUID.randomUUID().toString()); put("gpuId", command.id)
+                            }.toString())
+                        } catch (_: IOException) { activeSocket?.close() }
+                    }
+                    continue
+                }
                 active?.cancelAndJoin()
                 when (command) {
                     is Command.Connect -> {
@@ -77,6 +90,7 @@ class ConnectionController(
                             while (isActive) { update { tick() }; delay(250) }
                         }
                     }
+                    is Command.SelectGpu -> Unit
                 }
             }
         }
@@ -88,6 +102,7 @@ class ConnectionController(
     }
     fun startDemo() { commands.trySend(Command.Demo) }
     fun stop(keepAging: Boolean = true) { commands.trySend(Command.Stop(keepAging)) }
+    fun selectGpu(id: String) { if (id.isNotBlank()) commands.trySend(Command.SelectGpu(id)) }
 
     private suspend fun update(change: SnapshotState.() -> Unit) {
         gate.withLock {
@@ -108,6 +123,7 @@ class ConnectionController(
             var socket: TelemetrySocket? = null
             try {
                 socket = factory.open(profile)
+                gate.withLock { activeSocket = socket }
                 socket.send(buildJsonObject {
                     put("type", "auth"); put("version", 1)
                     put("credentialId", profile.credentialId); put("token", profile.token)
@@ -149,7 +165,12 @@ class ConnectionController(
                     kotlinx.coroutines.awaitCancellation()
                 }
                 update { setPhase(if (state.snapshot == null) ConnectionPhase.RECONNECTING else ConnectionPhase.OFFLINE, true, reason) }
-            } finally { socket?.close() }
+            } finally {
+                socket?.close()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    gate.withLock { if (activeSocket === socket) activeSocket = null }
+                }
+            }
             delay(reconnectDelay(attempt++, jitter()))
         }
     }

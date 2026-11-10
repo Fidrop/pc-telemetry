@@ -1,5 +1,5 @@
-# Windows Collector 阶段1
-需要Windows10/11 x64与.NET8 SDK，构建输出为开发用控制台程序。当前没有托盘和首次配对向导。
+# Windows Collector
+需要Windows10/11 x64与.NET8 SDK。当前默认无参数启动托盘，可打开限时配对窗口；带参数的控制台调试入口继续可用。最新状态见docs/stage-5-report.md，当前按用户指令暂停。
 
 ## 构建和检查
 在根目录执行scripts/build-windows.ps1 -Test。依赖已锁定，使用--locked-mode还原。
