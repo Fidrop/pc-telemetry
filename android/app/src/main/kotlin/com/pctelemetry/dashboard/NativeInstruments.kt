@@ -73,7 +73,8 @@ private fun number(value: Float?, unit: String = "%") =
 
 @Composable
 fun SportDashboard(values: InstrumentValues, state: DashboardState, status: String, age: String,
-    selfTest: Float?, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true) {
+    selfTest: Float?, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true,
+    phone: PhoneStatus = PhoneStatus()) {
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC) } }
     Box(modifier) {
         SportBackground(paint, rogBranding)
@@ -104,6 +105,7 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             memory(paint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel)
             memory(paint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel)
         } }
+        PhoneStatusLayer(paint, phone, sport = true)
     }
 }
 private fun DrawScope.gaugeBackground(paint: Paint, center: Offset, radius: Float) {
@@ -153,7 +155,8 @@ private fun DrawScope.memory(paint: Paint, name: String, metric: MemoryMetric?,
 
 @Composable
 fun HudDashboard(values: InstrumentValues, state: DashboardState, status: String, age: String,
-    nowMillis: () -> Long, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true) {
+    nowMillis: () -> Long, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true,
+    phone: PhoneStatus = PhoneStatus()) {
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("monospace", Typeface.BOLD) } }
     val cpuPath = remember { Path() }
     val gpuPath = remember { Path() }
@@ -185,6 +188,7 @@ fun HudDashboard(values: InstrumentValues, state: DashboardState, status: String
                 if (state.isOffline) Orange else Cyan, maxWidth = 260f)
             label(paint, age, 1015f, 705f, 24f, White)
         } }
+        PhoneStatusLayer(paint, phone, sport = false)
     }
 }
 private fun DrawScope.outline(origin: Offset, size: Size, color: Color) =
@@ -234,15 +238,14 @@ private fun DrawScope.curve(path: Path, state: DashboardState, now: Long, cpu: B
 @Composable
 private fun SportBackground(paint: Paint, rogBranding: Boolean) {
     val emblem = painterResource(if (rogBranding) R.drawable.brand_rog else R.drawable.brand_telemetry)
-    val headerEmblem = painterResource(if (rogBranding) R.drawable.brand_rog else R.drawable.brand_telemetry)
     Canvas(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) { design {
         drawRect(Color(0xFF070809), size = Size(WIDTH, HEIGHT))
         for (index in -40..90) {
             val x = index * 28f
             drawLine(Color(0xFF121416), Offset(x, HEIGHT), Offset(x + 700, 0f), 3f)
         }
-        drawEmblem(headerEmblem, Offset(65f, -4f), 100f, Red)
-        label(paint, "PC TELEMETRY", 185f, 63f, 36f)
+        drawLine(Red, Offset(78f, 32f), Offset(78f, 66f), 4f)
+        label(paint, "PC TELEMETRY", 95f, 63f, 36f)
         label(paint, "SPORT", 1435f, 63f, 38f, Red)
         for (centerX in listOf(470f, 1304f)) gaugeBackground(paint, Offset(centerX, 410f), 292f)
         label(paint, "CPU", 470f, 310f, 46f, center = true)

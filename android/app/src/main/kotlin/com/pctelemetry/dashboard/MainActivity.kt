@@ -91,6 +91,10 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
     var dismissedInitial by rememberSaveable { mutableStateOf(false) }
     val theme = settings.theme
     val values = animatedValues(state)
+    val phone by rememberPhoneStatus()
+    val phoneDescription = stringResource(R.string.phone_status, phone.time,
+        phone.battery.percent?.let { "$it%" } ?: "N/A",
+        if (phone.battery.charging) stringResource(R.string.charging) else "")
     val startup = remember { Animatable(0f) }
     var selfTest by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
@@ -132,7 +136,7 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
         stringResource(R.string.gpu_temperature) + ": " + (metrics?.gpuTemperature?.value ?: "N/A"),
         stringResource(R.string.ram) + ": " + (metrics?.ram?.percent ?: "N/A"),
         stringResource(R.string.vram) + ": " + (metrics?.vram?.percent ?: "N/A")
-    ).joinToString(", ")
+    ).joinToString(", ") + ", " + phoneDescription
     var drag by remember { mutableFloatStateOf(0f) }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         .windowInsetsPadding(WindowInsets.displayCutout.union(
@@ -152,11 +156,11 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
         if (theme == DashboardTheme.SPORT) {
             SportDashboard(values, state, status, age, if (selfTest) startup.value else null, staleLabel,
                 instruments.semantics { contentDescription = "SPORT dashboard"; stateDescription = readingDescription },
-                rogBranding = settings.rogBranding)
+                rogBranding = settings.rogBranding, phone = phone)
         } else {
             HudDashboard(values, state, status, age, { chartOrigin + chartTime.toLong() }, staleLabel,
                 instruments.semantics { contentDescription = "HUD dashboard"; stateDescription = readingDescription },
-                rogBranding = settings.rogBranding)
+                rogBranding = settings.rogBranding, phone = phone)
         }
         TextButton(onClick = { panel = true }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
             .semantics { contentDescription = settingsDescription }) { Text("⚙", fontSize = 25.sp) }

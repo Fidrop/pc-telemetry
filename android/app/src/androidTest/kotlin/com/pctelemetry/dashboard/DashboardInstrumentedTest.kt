@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -86,6 +87,41 @@ class DashboardInstrumentedTest {
         }
         rule.onNodeWithTag("settings-close").performScrollTo().performClick()
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
+    }
+
+    @Test fun phoneStatusReportsBatteryAndTicksInBothThemes() {
+        assertEquals("00:00:00", formatPhoneTime(java.time.LocalTime.MIDNIGHT))
+        assertEquals("13:04:09", formatPhoneTime(java.time.LocalTime.of(13, 4, 9)))
+        assertEquals("23:59:59", formatPhoneTime(java.time.LocalTime.of(23, 59, 59)))
+        fun fixtureBattery(level: Int, scale: Int, status: Int) = android.content.Intent().apply {
+            putExtra(android.os.BatteryManager.EXTRA_LEVEL, level)
+            putExtra(android.os.BatteryManager.EXTRA_SCALE, scale)
+            putExtra(android.os.BatteryManager.EXTRA_STATUS, status)
+        }
+        assertNull(PhoneBattery.from(null).percent)
+        assertNull(PhoneBattery.from(fixtureBattery(5, 0, 0)).percent)
+        assertNull(PhoneBattery.from(fixtureBattery(101, 100, 0)).percent)
+        assertEquals(0, PhoneBattery.from(fixtureBattery(0, 100, 0)).percent)
+        assertEquals(50, PhoneBattery.from(fixtureBattery(100, 200, 0)).percent)
+        assertTrue(PhoneBattery.from(fixtureBattery(50, 100, android.os.BatteryManager.BATTERY_STATUS_CHARGING)).charging)
+
+        rule.runOnUiThread {
+            ViewModelProvider(rule.activity)[DashboardViewModel::class.java]
+                .updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+        }
+        rule.onNodeWithText("Enter DEMO").performClick()
+        val clock = Regex("Phone time ([0-2][0-9]:[0-5][0-9]:[0-5][0-9]), battery (N/A|[0-9]{1,3}%)")
+        fun status(theme: String) = rule.onNodeWithContentDescription("$theme dashboard")
+            .fetchSemanticsNode().config[SemanticsProperties.StateDescription]
+        rule.waitUntil(5000) { clock.find(status("SPORT")) != null }
+        val firstTime = clock.find(status("SPORT"))!!.groupValues[1]
+        rule.waitUntil(4000) { clock.find(status("SPORT"))?.groupValues?.get(1) != firstTime }
+        val battery = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+        val percent = PhoneBattery.from(battery).percent
+        if (percent != null) assertTrue(status("SPORT").contains("battery $percent%"))
+        rule.onNodeWithContentDescription("SPORT dashboard").performTouchInput { swipeLeft() }
+        rule.waitUntil(5000) { clock.find(status("HUD")) != null }
+        if (percent != null) assertTrue(status("HUD").contains("battery $percent%"))
     }
 
     @Test fun realCollectorAndKeystoreOnAndroid() = runBlocking {
