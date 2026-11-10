@@ -1,5 +1,5 @@
 # PC Telemetry v1.0
-Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主要配对/设置代码，并完成Android10模拟器真实联调。按用户最新指令暂停，恢复位置见[工作状态](docs/work-status.md)。
+Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主要配对/设置代码，并完成Android10模拟器真实联调。已恢复连续开发，当前进度见[工作状态](docs/work-status.md)。
 
 项目公开仓库 https://github.com/Fidrop/pc-telemetry ，可匿名访问及克隆main分支，接续说明见docs/handoff.md。
 
@@ -27,8 +27,8 @@ Windows x64，安装.NET8 SDK（global.json约束8.0.4xx功能带）后，在Pow
 ./scripts/check-stage0.ps1
 ./scripts/check-protocol-schema.ps1
 ./scripts/verify-live-windows.ps1
-./scripts/package-project.ps1 -Stage stage1
+./scripts/package-project.ps1 -Stage stage6
 ```
 构建脚本也支持本项目.tools/dotnet内的独立SDK，SDK与缓存不随源码包迁移。
-当前Windows无参数启动进入托盘，控制台调试默认回环，--lan允许绑定私有网络地址。Android已有Debug构建与配对代码，阶段6发布验收尚未执行。
+当前Windows无参数启动进入托盘，控制台调试默认回环，--lan允许绑定私有网络地址。Android已有Debug构建与配对代码，阶段6发布验收正在推进。
 源码压缩包不包含SDK、凭据和构建输出。阶段6再交付自包含便携EXE与APK。

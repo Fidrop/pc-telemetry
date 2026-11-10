@@ -14,6 +14,12 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeout
+import com.pctelemetry.core.PinnedSocketFactory
+import com.pctelemetry.core.AuthResult
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
@@ -42,6 +48,31 @@ class DashboardInstrumentedTest {
         rule.onNodeWithContentDescription("SPORT dashboard").performTouchInput { swipeLeft() }
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
         save("hud-demo.png")
+    }
+
+    @Test fun settingsPersistAndLanguageSwitches(): Unit = runBlocking {
+        val model = rule.runOnUiThread {
+            ViewModelProvider(rule.activity)[DashboardViewModel::class.java].also {
+                it.updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+            }
+        }
+        rule.onNodeWithText("Enter DEMO").performClick()
+        rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithText("HUD").performClick()
+        rule.onNodeWithText("简体中文").performClick()
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithText("设置").fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText("设置").assertExists()
+        rule.onNodeWithText("开启").performClick()
+        rule.onNodeWithContentDescription("OLED 像素微移").performScrollTo().performClick()
+        val expected = UiSettings(DashboardTheme.HUD, "zh", "on", true)
+        try { rule.waitUntil(5000) { model.settings.value == expected } }
+        catch (failure: Throwable) { throw AssertionError("Expected settings $expected, observed ${model.settings.value}", failure) }
+        val restored = withTimeout(5000) { UiSettingsStore(context).settings.first { it == expected } }
+        assertEquals(expected, restored)
+        rule.onNodeWithTag("settings-close").performScrollTo().performClick()
+        rule.onNodeWithContentDescription("HUD dashboard").assertExists()
     }
 
     @Test fun realCollectorAndKeystoreOnAndroid() = runBlocking {
@@ -77,6 +108,18 @@ class DashboardInstrumentedTest {
         val storage = File(context.filesDir, "datastore/connection.preferences_pb").readBytes()
         assertFalse(storage.toString(Charsets.ISO_8859_1).contains(profile.token))
         save("sport-live.png")
+        rule.runOnUiThread { model.rePair() }
+        rule.waitUntil(10_000) { model.profile.value == null }
+        assertNull(SecureProfileStore(context).load())
+        val revokedSocket = PinnedSocketFactory().open(profile)
+        try {
+            revokedSocket.send(buildJsonObject {
+                put("type", "auth"); put("version", 1)
+                put("credentialId", profile.credentialId); put("token", profile.token)
+            }.toString())
+            val reply = Protocol.json.decodeFromString<AuthResult>(revokedSocket.receive()!!)
+            assertFalse(reply.success)
+        } finally { revokedSocket.close() }
     }
     private fun save(name: String) {
         val directory = File(context.getExternalFilesDir(null), "qa").apply { mkdirs() }

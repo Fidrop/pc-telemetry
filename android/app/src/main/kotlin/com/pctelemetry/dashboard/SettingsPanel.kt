@@ -12,6 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -23,6 +26,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () -> Unit, onPair: () -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
+    val pixelShiftDescription = stringResource(R.string.pixel_shift)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Row(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f))) {
             Spacer(Modifier.weight(1f).fillMaxHeight().clickable(onClick = onDismiss))
@@ -31,25 +35,31 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
-                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+                        TextButton(onClick = onDismiss, modifier = Modifier.testTag("settings-close")) {
+                            Text(stringResource(R.string.close))
+                        }
                     }
                     Text(stringResource(R.string.theme))
                     Choices(listOf("SPORT", "HUD"), value.theme.ordinal) {
-                        model.updateSettings(value.copy(theme = DashboardTheme.entries[it]))
+                        val theme = DashboardTheme.entries[it]
+                        model.changeSettings { previous -> previous.copy(theme = theme) }
                     }
                     Text(stringResource(R.string.language))
                     Choices(listOf(stringResource(R.string.system), "简体中文", "English"),
                         listOf("system", "zh", "en").indexOf(value.language)) {
-                        model.updateSettings(value.copy(language = listOf("system", "zh", "en")[it]))
+                        val language = listOf("system", "zh", "en")[it]
+                        model.changeSettings { previous -> previous.copy(language = language) }
                     }
                     Text(stringResource(R.string.night))
                     Choices(listOf(stringResource(R.string.system), stringResource(R.string.night_on),
                         stringResource(R.string.night_off)), listOf("system", "on", "off").indexOf(value.night)) {
-                        model.updateSettings(value.copy(night = listOf("system", "on", "off")[it]))
+                        val night = listOf("system", "on", "off")[it]
+                        model.changeSettings { previous -> previous.copy(night = night) }
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.pixel_shift), Modifier.weight(1f))
-                        Switch(value.pixelShift, { model.updateSettings(value.copy(pixelShift = it)) })
+                        Switch(value.pixelShift, { enabled -> model.changeSettings { it.copy(pixelShift = enabled) } },
+                            modifier = Modifier.semantics { contentDescription = pixelShiftDescription })
                     }
                     Text(stringResource(R.string.gpu_selection))
                     state.gpus.forEach { gpu ->
@@ -84,12 +94,14 @@ private fun Choices(labels: List<String>, selected: Int, change: (Int) -> Unit) 
 @Composable
 fun PairingDialog(model: DashboardViewModel, initial: String?, onDismiss: () -> Unit) {
     val discovered by model.discovered.collectAsStateWithLifecycle()
+    val profileError by model.error.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var endpoint by remember { mutableStateOf(initial ?: "") }
     var fingerprint by remember { mutableStateOf<String?>(null) }
     var confirmed by remember { mutableStateOf(false) }
     var code by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var pairingOperation by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     fun normalize(): String {
         val value = endpoint.trim().let { if ("://" in it) it else "wss://$it" }
@@ -108,6 +120,7 @@ fun PairingDialog(model: DashboardViewModel, initial: String?, onDismiss: () -> 
             Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.pairing_intro))
+                if (profileError == R.string.unpair_failed) Text(stringResource(R.string.unpair_failed))
                 TextButton(onClick = model::discover, enabled = !busy) { Text(stringResource(R.string.search)) }
                 discovered.forEach { item ->
                     TextButton(onClick = { changeEndpoint(item.endpoint) }, enabled = !busy) { Text(item.name) }
@@ -117,7 +130,7 @@ fun PairingDialog(model: DashboardViewModel, initial: String?, onDismiss: () -> 
                     label = { Text(stringResource(R.string.endpoint_manual)) }, singleLine = true, enabled = !busy)
                 TextButton(onClick = {
                     scope.launch {
-                        busy = true; failed = false
+                        busy = true; pairingOperation = false; failed = false
                         try {
                             val requested = normalize()
                             fingerprint = PairingClient().fingerprint(requested)
@@ -127,6 +140,7 @@ fun PairingDialog(model: DashboardViewModel, initial: String?, onDismiss: () -> 
                     }
                 }, enabled = !busy && endpoint.isNotBlank()) { Text(stringResource(R.string.check_fingerprint)) }
                 fingerprint?.let { pin ->
+                    Text(stringResource(R.string.fingerprint))
                     Text(pin, style = MaterialTheme.typography.bodySmall)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(confirmed, { confirmed = it }, enabled = !busy)
@@ -137,13 +151,16 @@ fun PairingDialog(model: DashboardViewModel, initial: String?, onDismiss: () -> 
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword))
                 }
                 if (failed) Text(stringResource(R.string.pairing_failed), color = MaterialTheme.colorScheme.error)
-                if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (busy) {
+                    Text(stringResource(if (pairingOperation) R.string.pairing_busy else R.string.fingerprint_loading))
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 scope.launch {
-                    busy = true; failed = false
+                    busy = true; pairingOperation = true; failed = false
                     try {
                         val profile = PairingClient().pair(normalize(), fingerprint!!, code)
                         model.connect(profile)

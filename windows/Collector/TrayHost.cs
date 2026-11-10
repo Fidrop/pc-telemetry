@@ -10,7 +10,7 @@ public static class TrayHost
         var options = Options.Parse(args) with { Lan = true };
         using var context = new CollectorTrayContext(options);
         Application.Run(context);
-        return 0;
+        return context.ExitCode;
     }
 }
 
@@ -22,7 +22,10 @@ internal sealed class CollectorTrayContext : ApplicationContext
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 1000 };
     private readonly ToolStripMenuItem status = new("正在启动");
     private readonly Task execution;
+    private readonly StartupRegistration startupRegistration = new(Registry.CurrentUser,
+        Path.Combine(AppContext.BaseDirectory, "Collector.exe"));
     private Form? pairingForm;
+    public int ExitCode { get; private set; }
 
     public CollectorTrayContext(Options options)
     {
@@ -31,12 +34,18 @@ internal sealed class CollectorTrayContext : ApplicationContext
         status.Enabled = false;
         menu.Items.Add(status);
         menu.Items.Add("打开配对信息", null, (_, _) => ShowPairing(options.Port));
-        var startup = new ToolStripMenuItem("开机自启") { CheckOnClick = true, Checked = StartupEnabled() };
-        startup.CheckedChanged += (_, _) =>
+        var startup = new ToolStripMenuItem("开机自启") { Checked = startupRegistration.Enabled };
+        startup.Click += (_, _) =>
         {
-            try { SetStartup(startup.Checked); }
+            try
+            {
+                startupRegistration.SetEnabled(!startup.Checked);
+                startup.Checked = startupRegistration.Enabled;
+            }
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
-            { MessageBox.Show("无法修改当前用户的开机自启设置。", "PC Telemetry"); }
+            {
+                MessageBox.Show("无法修改当前用户的开机自启设置。", "PC Telemetry");
+            }
         };
         menu.Items.Add(startup);
         menu.Items.Add("移除全部配对", null, (_, _) =>
@@ -51,6 +60,8 @@ internal sealed class CollectorTrayContext : ApplicationContext
         execution = Task.Run(() => runtime.RunAsync(cancellation.Token));
         timer.Tick += (_, _) =>
         {
+            if (options.Samples > 0 && execution.IsCompletedSuccessfully) { ExitThread(); return; }
+            if (options.Samples > 0 && execution.IsFaulted) { ExitThread(); return; }
             status.Text = execution.IsFaulted ? "采集服务异常，请退出后重启" :
                 $"连接数 {runtime.Telemetry.ConnectionCount} · " +
                 (runtime.Addresses.Count > 0 ? "私有局域网" : "仅本机，请检查网络配置文件");
@@ -96,29 +107,18 @@ internal sealed class CollectorTrayContext : ApplicationContext
         form.Show();
     }
 
-    private static bool StartupEnabled()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-        return key?.GetValue("PcTelemetry") is string;
-    }
-    private static void SetStartup(bool enabled)
-    {
-        using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-        if (enabled)
-        {
-            var executable = Path.Combine(AppContext.BaseDirectory, "Collector.exe");
-            key.SetValue("PcTelemetry", "\"" + executable + "\" --tray");
-        }
-        else key.DeleteValue("PcTelemetry", false);
-    }
-
     protected override void ExitThreadCore()
     {
         timer.Stop();
         pairingForm?.Close();
         cancellation.Cancel();
         try { execution.GetAwaiter().GetResult(); }
-        catch (Exception ex) when (ex is OperationCanceledException or IOException or InvalidOperationException) { }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            ExitCode = 1;
+            Console.Error.WriteLine($"Collector service failed: {ex.GetType().Name}: {ex.Message}");
+        }
         runtime.DisposeAsync().AsTask().GetAwaiter().GetResult();
         icon.Visible = false;
         icon.Dispose();

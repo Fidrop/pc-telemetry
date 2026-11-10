@@ -8,6 +8,8 @@ import com.pctelemetry.core.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -16,6 +18,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
     private val store = SecureProfileStore(application)
     private val settingsStore = UiSettingsStore(application)
+    private val settingsChanges = Channel<(UiSettings) -> UiSettings>(64)
     private val profileGate = Mutex()
     private val controller = ConnectionController(viewModelScope, MonotonicClock { SystemClock.elapsedRealtime() })
     val state = controller.state
@@ -42,16 +45,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
         viewModelScope.launch {
-            try { settingsStore.settings.collect { mutableSettings.value = it } }
+            try { mutableSettings.value = settingsStore.settings.first() }
             catch (_: Exception) { mutableError.value = R.string.storage_error }
+            for (change in settingsChanges) {
+                val previous = mutableSettings.value
+                val next = change(previous)
+                mutableSettings.value = next
+                try { settingsStore.save(next) }
+                catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                catch (_: Exception) {
+                    mutableSettings.value = previous
+                    mutableError.value = R.string.storage_error
+                }
+            }
         }
     }
-    fun updateSettings(value: UiSettings) {
-        mutableSettings.value = value
-        viewModelScope.launch {
-            try { settingsStore.save(value) }
-            catch (_: Exception) { mutableError.value = R.string.storage_error }
-        }
+    fun updateSettings(value: UiSettings) = changeSettings { value }
+    fun changeSettings(change: (UiSettings) -> UiSettings) {
+        if (!settingsChanges.trySend(change).isSuccess) mutableError.value = R.string.storage_error
     }
     fun discover() {
         discoveryJob?.cancel()
@@ -88,11 +99,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         controller.stop()
         viewModelScope.launch {
             profileGate.withLock {
+                var revoked = true
                 mutableProfile.value?.let { profile ->
-                    try { PairingClient().unpair(profile) } catch (_: Exception) { }
+                    try { PairingClient().unpair(profile) }
+                    catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                    catch (_: Exception) { revoked = false }
                 }
                 store.clear()
                 mutableProfile.value = null
+                mutableError.value = if (revoked) null else R.string.unpair_failed
                 paused = true; demo = false
             }
         }

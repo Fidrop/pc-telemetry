@@ -1,13 +1,6 @@
 <resources>
     <string name="app_name">PC Telemetry</string>
-    <string name="connection">连接设置</string>
-    <string name="development_connection">阶段 2 开发连接</string>
-    <string name="endpoint">WSS 地址</string>
     <string name="fingerprint">证书 SHA-256 指纹</string>
-    <string name="device_id">设备 ID</string>
-    <string name="credential_id">开发凭据 ID</string>
-    <string name="token">开发凭据 Token</string>
-    <string name="connect">保存并连接</string>
     <string name="disconnect">断开</string>
     <string name="demo">进入 DEMO</string>
     <string name="exit_demo">退出 DEMO</string>
@@ -17,7 +10,6 @@
     <string name="connecting">正在重新连接</string>
     <string name="waiting">等待有效数据</string>
     <string name="age">数据年龄 %1$.1f 秒</string>
-    <string name="history_count">60 秒有效采样 %1$d</string>
     <string name="cpu_usage">CPU 使用率</string>
     <string name="gpu_usage">GPU 使用率</string>
     <string name="cpu_temperature">CPU 温度</string>
@@ -30,7 +22,6 @@
     <string name="authentication_error">认证失败，请检查开发凭据。</string>
     <string name="certificate_error">证书校验失败，请在电脑端重新核对指纹。</string>
     <string name="protocol_error">协议或设备标识不匹配，请检查连接信息。</string>
-    <string name="development_note">仅连接已核对指纹的开发实例。正式首次配对向导将在后续阶段提供。</string>
     <string name="cancel">取消</string>
     <string name="settings">设置</string>
     <string name="theme">主题</string>

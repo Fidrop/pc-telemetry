@@ -12,6 +12,9 @@ public static class Program
             try { return TrayHost.Run(args.Where(arg => arg != "--tray").ToArray()); }
             catch (Exception ex)
             {
+                Console.Error.WriteLine($"Collector tray stopped: {ex.GetType().Name}: {ex.Message}");
+                if (args.Contains("--samples")) Console.Error.WriteLine(ex.StackTrace);
+                if (args.Contains("--samples")) return 1;
                 MessageBox.Show("无法启动Collector。请检查端口、配置或是否已经运行。\n" + ex.Message, "PC Telemetry");
                 return 1;
             }

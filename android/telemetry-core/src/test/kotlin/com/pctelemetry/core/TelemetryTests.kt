@@ -8,6 +8,9 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -147,6 +150,26 @@ class TelemetryTests {
         assertEquals(listOf(1000L, 2000L, 4000L, 8000L, 16000L, 30000L),
             (0..5).map { ConnectionController.reconnectDelay(it, 1.0) })
         assertEquals(30_000L, ConnectionController.reconnectDelay(1000, 1.2))
+    }
+    @Test fun unpairAllowsQueuedTelemetryBeforeAcknowledgement() = runTest {
+        val incoming = Channel<String>(Channel.UNLIMITED)
+        var closed = false
+        val socket = object : TelemetrySocket {
+            override suspend fun receive() = incoming.receive()
+            override fun close() { closed = true; incoming.close() }
+            override fun send(text: String) {
+                val command = Protocol.json.parseToJsonElement(text).jsonObject
+                when (command.getValue("type").jsonPrimitive.content) {
+                    "auth" -> handshake(snapshot()).forEach { incoming.trySend(it) }
+                    "unpair" -> incoming.trySend(kotlinx.serialization.json.buildJsonObject {
+                        put("type", "unpair.result"); put("version", 1)
+                        put("requestId", command.getValue("requestId")); put("success", true)
+                    }.toString())
+                }
+            }
+        }
+        PairingClient { socket }.unpair(profile)
+        assertTrue(closed)
     }
 
     private class FakeSocket(initial: List<String>) : TelemetrySocket {

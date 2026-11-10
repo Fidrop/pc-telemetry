@@ -25,12 +25,16 @@ public sealed class HardwareSampler : IDisposable
     private readonly Computer computer = new() { IsCpuEnabled = true, IsGpuEnabled = true };
     private readonly List<Group> groups = [];
     private readonly NativeMetrics native = new();
+    private GpuInfo[] gpus = [];
+    private Group? cpu;
+
+    private sealed record SensorBinding(ISensor Sensor, string Id, string Name, string Type);
 
     private sealed class Group(IHardware hardware)
     {
         public IHardware Hardware { get; } = hardware;
         public string Id => Hardware.Identifier.ToString();
-        public ISensor[]? Sensors { get; set; }
+        public SensorBinding[]? Sensors { get; set; }
         public SensorValue[] Values { get; set; } = [];
         public DateTimeOffset? SampledAt { get; set; }
         public GroupSchedule Schedule { get; } = new();
@@ -41,6 +45,10 @@ public sealed class HardwareSampler : IDisposable
     {
         computer.Open();
         foreach (var hardware in computer.Hardware) Add(hardware);
+        cpu = groups.FirstOrDefault(group => group.Hardware.HardwareType == HardwareType.Cpu);
+        gpus = groups.Where(group => group.Hardware.HardwareType != HardwareType.Cpu)
+            .Select(group => new GpuInfo(group.Id, group.Hardware.Name,
+                SensorMapping.GpuKind(group.Hardware.HardwareType.ToString(), group.Hardware.Name))).ToArray();
     }
 
     private void Add(IHardware hardware)
@@ -67,9 +75,10 @@ public sealed class HardwareSampler : IDisposable
             {
                 group.Hardware.Update();
                 // Cache the mapping after the first update, when lazy sensors are present.
-                group.Sensors ??= group.Hardware.Sensors;
-                group.Values = group.Sensors.Select(s => new SensorValue(s.Identifier.ToString(),
-                    s.Name, s.SensorType.ToString(), s.Value)).ToArray();
+                group.Sensors ??= group.Hardware.Sensors.Select(sensor =>
+                    new SensorBinding(sensor, sensor.Identifier.ToString(), sensor.Name, sensor.SensorType.ToString())).ToArray();
+                group.Values = group.Sensors.Select(sensor => new SensorValue(sensor.Id,
+                    sensor.Name, sensor.Type, sensor.Sensor.Value)).ToArray();
                 group.SampledAt = DateTimeOffset.UtcNow;
                 group.Fresh = true;
             }
@@ -82,12 +91,8 @@ public sealed class HardwareSampler : IDisposable
             timings.Add(new GroupTiming(group.Id, watch.Elapsed.TotalMilliseconds, failed ? "error" : "ok"));
         }
 
-        var gpus = groups.Where(g => g.Hardware.HardwareType != HardwareType.Cpu)
-            .Select(g => new GpuInfo(g.Id, g.Hardware.Name,
-                SensorMapping.GpuKind(g.Hardware.HardwareType.ToString(), g.Hardware.Name))).ToArray();
         var selected = SensorMapping.SelectGpu(gpus, request.GpuId);
         var gpuGroup = groups.FirstOrDefault(g => g.Id == selected?.Id);
-        var cpu = groups.FirstOrDefault(g => g.Hardware.HardwareType == HardwareType.Cpu);
         var fallback = native.Cpu(now);
         var cpuUsage = CpuValue(cpu, false);
         if (cpuUsage.Value is null) cpuUsage = fallback;

@@ -29,7 +29,39 @@ void Reject(string name, Action action)
     catch (JsonException) { Check(name, true); return; }
     throw new Exception("FAIL expected rejection: " + name);
 }
+var privateNetwork = PrivateNetwork.Read();
+using (var profiles = new System.Management.ManagementObjectSearcher(@"root\StandardCimv2",
+    "SELECT InterfaceIndex, NetworkCategory FROM MSFT_NetConnectionProfile"))
+using (var results = profiles.Get())
+{
+    var privateIndexes = new HashSet<int>();
+    foreach (System.Management.ManagementObject profile in results)
+        using (profile)
+            if (Convert.ToInt32(profile["NetworkCategory"]) is 1 or 2)
+                privateIndexes.Add(Convert.ToInt32(profile["InterfaceIndex"]));
+    var expectedIds = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+        .Where(adapter => adapter.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+            adapter.Supports(System.Net.NetworkInformation.NetworkInterfaceComponent.IPv4) &&
+            privateIndexes.Contains(adapter.GetIPProperties().GetIPv4Properties().Index))
+        .Select(adapter => adapter.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    Check("LAN adapter selection matches Windows private/domain profiles",
+        expectedIds.SetEquals(privateNetwork.AdapterIds));
+    Check("LAN addresses exclude loopback", privateNetwork.Addresses.All(address => !System.Net.IPAddress.IsLoopback(address)));
+}
 var at = DateTimeOffset.UtcNow;
+var registryPath = @"Software\PcTelemetryTests\" + Guid.NewGuid().ToString("N");
+try
+{
+    using var isolatedRoot = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(registryPath);
+    var registration = new StartupRegistration(isolatedRoot, @"C:\Program Files\PC Telemetry\Collector.exe", "Run");
+    Check("Autostart starts disabled in isolated key", !registration.Enabled);
+    registration.SetEnabled(true);
+    Check("Autostart quotes paths containing spaces", registration.Enabled &&
+        registration.Command == "\"C:\\Program Files\\PC Telemetry\\Collector.exe\" --tray");
+    registration.SetEnabled(false);
+    Check("Autostart can be disabled", !registration.Enabled);
+}
+finally { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(registryPath, false); }
 SensorValue Sensor(string name, string type, double? value) => new("fixture/" + name, name, type, value);
 var cpu = new[] { Sensor("CPU Core #1", "Load", 10), Sensor("CPU Total", "Load", 42),
     Sensor("CPU Package", "Temperature", 55), Sensor("CPU Core #1", "Temperature", 80) };

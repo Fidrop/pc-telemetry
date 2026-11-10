@@ -16,6 +16,8 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 private data class PairResult(val type: String, val version: Int, val requestId: String?,
@@ -78,14 +80,26 @@ class PairingClient(private val factory: SocketFactory = PinnedSocketFactory()) 
                     put("type", "auth"); put("version", 1)
                     put("credentialId", profile.credentialId); put("token", profile.token)
                 }.toString())
-                require(Protocol.json.decodeFromString<AuthResult>(socket.receive()!!).success)
-                Protocol.json.decodeFromString<Hello>(socket.receive()!!)
+                val auth = Protocol.json.decodeFromString<AuthResult>(socket.receive()!!)
+                require(auth.type == "auth.result" && auth.version == 1 && auth.success)
+                val hello = Protocol.json.decodeFromString<Hello>(socket.receive()!!)
+                require(hello.type == "hello" && hello.version == 1 && hello.deviceId == profile.deviceId)
                 val request = UUID.randomUUID().toString()
                 socket.send(buildJsonObject {
                     put("type", "unpair"); put("version", 1); put("requestId", request)
                 }.toString())
-                val reply = Protocol.json.decodeFromString<UnpairResult>(socket.receive() ?: throw java.io.IOException())
-                require(reply.type == "unpair.result" && reply.version == 1 && reply.requestId == request && reply.success)
+                while (true) {
+                    val text = socket.receive() ?: throw java.io.IOException()
+                    when (Protocol.json.parseToJsonElement(text).jsonObject["type"]?.jsonPrimitive?.content) {
+                        "telemetry" -> Protocol.decode(text)
+                        "unpair.result" -> {
+                            val reply = Protocol.json.decodeFromString<UnpairResult>(text)
+                            require(reply.version == 1 && reply.requestId == request && reply.success)
+                            break
+                        }
+                        else -> throw ProtocolFailure()
+                    }
+                }
             }
         } finally { socket.close() }
     }

@@ -1,7 +1,7 @@
 
 com.pctelemetry.dashboard.DashboardInstrumentedTest:.
 
-Time: 2.74
+Time: 4.463
 
 OK (1 test)
 
