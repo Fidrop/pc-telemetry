@@ -17,6 +17,7 @@ Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主
 - [时间、电量与SPORT标志调整](docs/clock-battery-report.md)
 - [SPORT顶部电量灯条](docs/sport-battery-bar-report.md)
 - [SPORT引擎控制与启动自检](docs/engine-control-report.md)
+- [SPORT拾音条与灵敏度](docs/microphone-report.md)
 - [依赖与工程方案](docs/architecture.md)
 - [协议草案](protocol/README.md)
 - [安全方案](docs/security.md)

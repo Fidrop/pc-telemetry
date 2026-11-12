@@ -31,6 +31,14 @@
     <string name="engine_stop_description">关闭 SPORT 仪表</string>
     <string name="engine_hold_description">持续按住 1 秒启动引擎</string>
     <string name="engine_hold_hint">持续按住启动按钮 1 秒，松开将取消</string>
+    <string name="microphone_meter">SPORT 麦克风拾音条</string>
+    <string name="microphone_note">仅在 SPORT 仪表前台开启麦克风，两侧显示同一声音强度；不保存或发送音频。关闭、切换 HUD 或引擎关闭后释放麦克风。</string>
+    <string name="microphone_permission_denied">未获得麦克风权限，拾音条已保持关闭。</string>
+    <string name="microphone_unavailable">无法使用麦克风，请检查权限、系统麦克风开关或设备占用。</string>
+    <string name="microphone_active">麦克风正在拾音</string>
+    <string name="microphone_starting">正在开启麦克风</string>
+    <string name="microphone_sensitivity">拾音灵敏度 %1$d%%</string>
+    <string name="microphone_sensitivity_hint">靠近音箱时调低，声音较小时调高；拖动可实时预览。此音量条不是校准分贝计。</string>
     <string name="language">语言</string>
     <string name="system">跟随系统</string>
     <string name="night">夜间模式</string>

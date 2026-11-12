@@ -1,11 +1,15 @@
 package com.pctelemetry.dashboard
 
 import android.os.Bundle
+import android.Manifest
+import android.content.pm.PackageManager
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.core.*
 import androidx.compose.animation.AnimatedContent
@@ -28,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -97,6 +103,15 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
     val theme = settings.theme
     var sportEngineOff by rememberSaveable { mutableStateOf(false) }
     val showEngineOff = theme == DashboardTheme.SPORT && sportEngineOff
+    val context = LocalContext.current
+    var microphoneDenied by remember { mutableStateOf(false) }
+    var microphoneSensitivityPreview by remember { mutableStateOf<Int?>(null) }
+    val microphonePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        microphoneDenied = !granted
+        model.changeSettings { it.copy(microphoneMeter = granted) }
+    }
+    val microphone by rememberMicrophoneMeter(settings.microphoneMeter && theme == DashboardTheme.SPORT && !showEngineOff,
+        microphoneSensitivityPreview ?: settings.microphoneSensitivity)
     val values = animatedValues(state)
     val phone by rememberPhoneStatus()
     val phoneDescription = stringResource(R.string.phone_status, phone.time,
@@ -115,6 +130,12 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
         }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                model.changeSettings { it.copy(microphoneMeter = false) }
+        }
+    }
     var shift by remember { mutableStateOf(Offset.Zero) }
     LaunchedEffect(settings.pixelShift, lifecycle) {
         shift = Offset.Zero
@@ -182,6 +203,7 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
                         }, rogBranding = settings.rogBranding, phone = phone,
                         onEngineStop = { sportEngineOff = true; selfTest = false; panel = false; pairing = false },
                         selfTestRecovery = startupRecovery.value)
+                    if (settings.microphoneMeter) SportMicrophoneBars(microphone, instruments)
                 }
             }
         } else {
@@ -199,8 +221,20 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
         }
         problem?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error,
             modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)) }
+        if (theme == DashboardTheme.SPORT && (microphoneDenied || (settings.microphoneMeter && microphone.failed))) {
+            Text(stringResource(if (microphoneDenied) R.string.microphone_permission_denied else R.string.microphone_unavailable),
+                color = White, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
+        }
     }
-    if (panel) SettingsPanel(model, settings, onDismiss = { panel = false }, onPair = { pairing = true })
+    if (panel) SettingsPanel(model, settings, onDismiss = { panel = false }, onPair = { pairing = true },
+        onMicrophoneSensitivityPreview = { microphoneSensitivityPreview = it },
+        onMicrophoneChange = { enabled ->
+            microphoneDenied = false
+            if (!enabled) model.changeSettings { it.copy(microphoneMeter = false) }
+            else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+                model.changeSettings { it.copy(microphoneMeter = true) }
+            else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+        })
     if (pairing || (profile == null && !state.demo && !dismissedInitial)) {
         PairingDialog(model, profile?.endpoint) { pairing = false; dismissedInitial = true }
     }

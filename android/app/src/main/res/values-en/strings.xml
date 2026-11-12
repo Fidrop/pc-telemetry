@@ -31,6 +31,14 @@
     <string name="engine_stop_description">Turn off SPORT instruments</string>
     <string name="engine_hold_description">Hold for 1 second to start engine</string>
     <string name="engine_hold_hint">HOLD FOR 1 SECOND TO START · RELEASE TO CANCEL</string>
+    <string name="microphone_meter">SPORT microphone meters</string>
+    <string name="microphone_note">Captures only while SPORT instruments are in the foreground. Both bars show the same sound level. Audio is never saved or sent. Off, HUD and engine-off release the microphone.</string>
+    <string name="microphone_permission_denied">Microphone permission was not granted. Meters remain off.</string>
+    <string name="microphone_unavailable">Microphone unavailable. Check permission, the system microphone switch, or another recording app.</string>
+    <string name="microphone_active">Microphone active</string>
+    <string name="microphone_starting">Starting microphone</string>
+    <string name="microphone_sensitivity">Microphone sensitivity %1$d%%</string>
+    <string name="microphone_sensitivity_hint">Lower near speakers; raise for quiet sounds. Drag to preview. This is not a calibrated sound-pressure meter.</string>
     <string name="language">Language</string>
     <string name="system">System</string>
     <string name="night">Night mode</string>

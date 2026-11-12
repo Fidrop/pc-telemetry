@@ -16,3 +16,4 @@
 当前Android1.0-preview6：修正数字1的不可见整格留白，改善冒号与11之间的间距；见clock-battery-report.md最新补充与clock-kerning记录。
 
 当前Android1.0-preview7：SPORT ENGINE STOP/全屏ENGINE OFF/按住1秒启动、轻触感、页面过渡和约80%启动自检；HUD独立。交互和数据隔离检查通过，见docs/engine-control-report.md。
+2026-11-12当前Android1.0-preview8：SPORT红色拾音条默认关闭，增加0–100灵敏度，权限及实际录音释放检查、保存和5项原功能回归已通过；见docs/microphone-report.md。

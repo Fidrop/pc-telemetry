@@ -24,9 +24,13 @@ import com.pctelemetry.core.PairingClient
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () -> Unit, onPair: () -> Unit) {
+fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () -> Unit, onPair: () -> Unit,
+    onMicrophoneChange: (Boolean) -> Unit, onMicrophoneSensitivityPreview: (Int?) -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
     val pixelShiftDescription = stringResource(R.string.pixel_shift)
+    var microphoneSensitivity by remember(value.microphoneSensitivity) { mutableFloatStateOf(value.microphoneSensitivity.toFloat()) }
+    val previewCallback by rememberUpdatedState(onMicrophoneSensitivityPreview)
+    DisposableEffect(Unit) { onDispose { previewCallback(null) } }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Row(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f))) {
             Spacer(Modifier.weight(1f).fillMaxHeight().clickable(onClick = onDismiss))
@@ -69,6 +73,27 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                                 checkedTrackColor = Cyan, uncheckedThumbColor = Silver,
                                 uncheckedTrackColor = Color(0xFF273D4A)))
                     }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.microphone_meter), Modifier.weight(1f))
+                        Switch(value.microphoneMeter, onMicrophoneChange,
+                            modifier = Modifier.testTag("microphone-switch"),
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF30050D),
+                                checkedTrackColor = Red, uncheckedThumbColor = Silver,
+                                uncheckedTrackColor = Color(0xFF273D4A)))
+                    }
+                    Text(stringResource(R.string.microphone_note), style = MaterialTheme.typography.bodySmall,
+                        color = Silver)
+                    Text(stringResource(R.string.microphone_sensitivity, microphoneSensitivity.toInt()))
+                    Slider(value = microphoneSensitivity,
+                        onValueChange = { microphoneSensitivity = it; onMicrophoneSensitivityPreview(it.toInt()) },
+                        onValueChangeFinished = {
+                            val selected = microphoneSensitivity.toInt()
+                            model.changeSettings { it.copy(microphoneSensitivity = selected) }
+                        }, valueRange = 0f..100f, modifier = Modifier.testTag("microphone-sensitivity"),
+                        colors = SliderDefaults.colors(thumbColor = White, activeTrackColor = Red,
+                            inactiveTrackColor = Color(0xFF49333B)))
+                    Text(stringResource(R.string.microphone_sensitivity_hint), style = MaterialTheme.typography.bodySmall,
+                        color = Silver)
                     Text(stringResource(R.string.gpu_selection))
                     state.gpus.forEach { gpu ->
                         Row(Modifier.fillMaxWidth().clickable { model.selectGpu(gpu.id) },
