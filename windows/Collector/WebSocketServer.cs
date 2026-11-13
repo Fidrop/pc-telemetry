@@ -55,7 +55,9 @@ public static class WebSocketServer
             try
             {
                 using var socket = await context.WebSockets.AcceptWebSocketAsync();
-                await HandleAsync(socket, identity, telemetry, pairing, localClient, context.RequestAborted);
+                var deviceName = context.Request.Headers["X-PC-Telemetry-Features"].ToString()
+                    .Split(',', StringSplitOptions.TrimEntries).Contains("device-name");
+                await HandleAsync(socket, identity, telemetry, pairing, localClient, deviceName, context.RequestAborted);
             }
             finally { clients.Release(); }
         });
@@ -63,7 +65,7 @@ public static class WebSocketServer
     }
 
     private static async Task HandleAsync(WebSocket socket, LocalIdentity identity,
-        TelemetryService telemetry, PairingService? pairing, bool localClient, CancellationToken aborted)
+        TelemetryService telemetry, PairingService? pairing, bool localClient, bool deviceName, CancellationToken aborted)
     {
         using var connection = CancellationTokenSource.CreateLinkedTokenSource(aborted);
         using var sendGate = new SemaphoreSlim(1);
@@ -79,10 +81,10 @@ public static class WebSocketServer
                 IssuedCredential? credential = null;
                 var paired = pairing is not null && auth.RequestId is { Length: > 0 and <= 128 } &&
                     pairing.TryPair(auth.Code, out credential);
-                await SendAsync(socket, sendGate, Protocol.Encode(new {
+                await SendAsync(socket, sendGate, NamedEnvelope(new {
                     type = "pair.result", version = 1, requestId = auth.RequestId, success = paired,
                     deviceId = telemetry.DeviceId, credentialId = credential?.CredentialId,
-                    token = credential?.Token }), connection.Token);
+                    token = credential?.Token }, deviceName && paired), connection.Token);
                 return;
             }
             bool Authorized() => auth is not null &&
@@ -99,9 +101,9 @@ public static class WebSocketServer
             counted = true;
             await SendAsync(socket, sendGate, Protocol.Encode(new { type = "auth.result",
                 version = 1, success = true }), connection.Token);
-            await SendAsync(socket, sendGate, Protocol.Encode(new { type = "hello", version = 1,
+            await SendAsync(socket, sendGate, NamedEnvelope(new { type = "hello", version = 1,
                 deviceId = telemetry.DeviceId, sessionId = telemetry.SessionId,
-                supportedVersions = new[] { 1 }, gpuList = telemetry.Gpus }), connection.Token);
+                supportedVersions = new[] { 1 }, gpuList = telemetry.Gpus }, deviceName), connection.Token);
             subscription = telemetry.Subscribe();
             var sendTask = SendSnapshotsAsync(socket, sendGate, subscription.Reader, telemetry, Authorized, connection.Token);
             var receiveTask = ReceiveCommandsAsync(socket, sendGate, telemetry, pairing, auth.CredentialId, connection.Token);
@@ -131,6 +133,14 @@ public static class WebSocketServer
                 socket.Abort();
             }
         }
+    }
+
+    internal static byte[] NamedEnvelope<T>(T envelope, bool includeName)
+    {
+        if (!includeName) return Protocol.Encode(envelope);
+        var node = JsonSerializer.SerializeToNode(envelope, Protocol.Json)!.AsObject();
+        node["deviceName"] = Environment.MachineName;
+        return Protocol.Encode(node);
     }
 
     private static async Task SendSnapshotsAsync(WebSocket socket, SemaphoreSlim gate,

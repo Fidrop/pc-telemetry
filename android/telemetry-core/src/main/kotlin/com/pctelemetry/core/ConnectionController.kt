@@ -64,7 +64,7 @@ class ConnectionController(
                 when (command) {
                     is Command.Connect -> {
                         gate.withLock {
-                            if (previousProfile != command.profile || model.state.demo) model.reset()
+                            if (previousProfile?.copy(displayName = null) != command.profile.copy(displayName = null) || model.state.demo) model.reset()
                             previousProfile = command.profile
                         }
                         active = launch { runWithTicker { connectLoop(command.profile) } }

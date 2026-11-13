@@ -18,7 +18,8 @@ internal static class PairingFixtureHost
         using var reader = new StreamReader(pipe, Encoding.UTF8, false, 4096, true);
         var window = runtime.Pairing.OpenWindow();
         var information = new { endpoint = "wss://127.0.0.1:47631/v1/stream",
-            fingerprint = runtime.Identity.Fingerprint, code = window.Code, deviceId = runtime.Identity.Secrets.DeviceId };
+            fingerprint = runtime.Identity.Fingerprint, code = window.Code, deviceId = runtime.Identity.Secrets.DeviceId,
+            deviceName = Environment.MachineName };
         await writer.WriteLineAsync(JsonSerializer.Serialize(information, Protocol.Json));
         try { await reader.ReadLineAsync(); }
         finally

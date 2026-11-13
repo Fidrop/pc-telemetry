@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">PC Telemetry</string>
     <string name="fingerprint">Certificate SHA-256 fingerprint</string>
-    <string name="disconnect">Disconnect</string>
     <string name="demo">Enter DEMO</string>
     <string name="exit_demo">Exit DEMO</string>
     <string name="demo_status">DEMO · Simulated data</string>
@@ -56,10 +55,16 @@
     <string name="pairing_failed">Connection or pairing failed. Check the network and fingerprint, then reopen pairing on the PC.</string>
     <string name="fingerprint_loading">Reading certificate…</string>
     <string name="pairing_busy">Pairing…</string>
-    <string name="re_pair">Pair again</string>
     <string name="close">Close</string>
     <string name="no_discovery">If no PC is found, enter the endpoint shown on the PC.</string>
-    <string name="connection_status">Connection status</string>
     <string name="pairing_intro">Open pairing from the PC tray. Check the fingerprint before entering its one-time code.</string>
     <string name="unpair_failed">Local credentials removed. If the PC is offline, remove the old pairing from its tray.</string>
+    <string name="device_auth_failed">Credentials expired. Pair this PC again.</string>
+    <string name="device_disconnected">Disconnected · check to connect</string>
+    <string name="device_certificate_failed">Certificate changed. Verify and pair again.</string>
+    <string name="device_connecting">Connecting · uncheck to stop</string>
+    <string name="device_connected">Connected</string>
+    <string name="no_paired_devices">No saved PCs</string>
+    <string name="paired_devices">Connect paired devices</string>
+    <string name="connect_new_device">Connect a new device</string>
 </resources>

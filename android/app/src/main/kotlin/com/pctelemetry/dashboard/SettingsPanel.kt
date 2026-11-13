@@ -2,6 +2,7 @@ package com.pctelemetry.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,18 +16,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pctelemetry.core.PairingClient
+import com.pctelemetry.core.ConnectionPhase
 import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () -> Unit, onPair: () -> Unit,
     onMicrophoneChange: (Boolean) -> Unit, onMicrophoneSensitivityPreview: (Int?) -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
+    val profiles by model.profiles.collectAsStateWithLifecycle()
+    val selected by model.profile.collectAsStateWithLifecycle()
+    val wanted by model.connectionWanted.collectAsStateWithLifecycle()
     val pixelShiftDescription = stringResource(R.string.pixel_shift)
     var microphoneSensitivity by remember(value.microphoneSensitivity) { mutableFloatStateOf(value.microphoneSensitivity.toFloat()) }
     val previewCallback by rememberUpdatedState(onMicrophoneSensitivityPreview)
@@ -44,6 +51,37 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                             Text(stringResource(R.string.close))
                         }
                     }
+                    Text(stringResource(R.string.paired_devices), style = MaterialTheme.typography.titleMedium)
+                    if (profiles.isEmpty()) Text(stringResource(R.string.no_paired_devices), color = Silver)
+                    profiles.forEach { device ->
+                        val active = wanted && !state.demo && selected?.deviceId == device.deviceId
+                        val connected = active && state.phase == ConnectionPhase.CONNECTED
+                        val toggle = if (!active) ToggleableState.Off else if (connected) ToggleableState.On else ToggleableState.Indeterminate
+                        Row(Modifier.fillMaxWidth().testTag("device-${device.deviceId}")
+                            .triStateToggleable(toggle, role = Role.Checkbox,
+                                onClick = { if (active) model.disconnect() else model.reconnect(device.deviceId) })
+                            .padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            TriStateCheckbox(toggle, onClick = null, colors = CheckboxDefaults.colors(
+                                checkedColor = Cyan, uncheckedColor = Silver, checkmarkColor = Color(0xFF05252A)))
+                            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                                Text(device.displayName ?: java.net.URI(device.endpoint).host, color = White)
+                                Text(java.net.URI(device.endpoint).let { "${it.host}:${if (it.port == -1) 443 else it.port}" },
+                                    color = Silver, style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(if (connected) R.string.device_connected else if (active) {
+                                    when (state.message) {
+                                        "authentication" -> R.string.device_auth_failed
+                                        "certificate" -> R.string.device_certificate_failed
+                                        else -> R.string.device_connecting
+                                    }
+                                } else R.string.device_disconnected), color = if (connected) Cyan else Silver,
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    TextButton(onClick = { onDismiss(); onPair() }, modifier = Modifier.testTag("connect-new-device")) {
+                        Text("＋ " + stringResource(R.string.connect_new_device))
+                    }
+                    HorizontalDivider(color = Silver.copy(alpha = 0.2f))
                     Text(stringResource(R.string.theme))
                     Choices(listOf("SPORT", "HUD"), value.theme.ordinal) {
                         val theme = DashboardTheme.entries[it]
@@ -102,10 +140,6 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                             Text(gpu.name)
                         }
                     }
-                    Text(stringResource(R.string.connection_status) + " · " + state.phase.name)
-                    TextButton(onClick = { onDismiss(); onPair() }) { Text(stringResource(R.string.pairing)) }
-                    TextButton(onClick = { model.rePair(); onDismiss(); onPair() }) { Text(stringResource(R.string.re_pair)) }
-                    TextButton(onClick = model::disconnect) { Text(stringResource(R.string.disconnect)) }
                     TextButton(onClick = { model.startDemo(); onDismiss() }) { Text(stringResource(R.string.demo)) }
                     if (state.demo) TextButton(onClick = { model.exitDemo(); onDismiss() }) {
                         Text(stringResource(R.string.exit_demo))

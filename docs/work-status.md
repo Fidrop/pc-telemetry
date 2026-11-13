@@ -17,3 +17,6 @@
 
 当前Android1.0-preview7：SPORT ENGINE STOP/全屏ENGINE OFF/按住1秒启动、轻触感、页面过渡和约80%启动自检；HUD独立。交互和数据隔离检查通过，见docs/engine-control-report.md。
 2026-11-12当前Android1.0-preview8：SPORT红色拾音条默认关闭，增加0–100灵敏度，权限及实际录音释放检查、保存和5项原功能回归已通过；见docs/microphone-report.md。
+
+2026-11-13当前Android1.0-preview9：设置顶部改为已配对设备勾选连接列表，可保存多台、手动断开后直接重连，连接新设备纳入列表；显示Windows设备名FIDROP-MECH。旧加密配对自动迁移，身份校验不变。见paired-devices-report.md。
+Windows采集库升级为LibreHardwareMonitorLib0.9.6，移除引发Defender检测的WinRing0依赖；正常双击/托盘启动自动请求管理员授权，取消即退出。真实管理员进程与Defender开启时的目录扫描通过，见windows-security-report.md。旧发布页已加安全告知。

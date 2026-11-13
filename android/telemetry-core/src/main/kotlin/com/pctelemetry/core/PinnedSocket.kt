@@ -51,7 +51,8 @@ class PinnedSocketFactory : SocketFactory {
             .build()
         val opened = kotlinx.coroutines.CompletableDeferred<Unit>()
         val messages = Channel<String>(64)
-        val socket = client.newWebSocket(Request.Builder().url(profile.endpoint).build(),
+        val socket = client.newWebSocket(Request.Builder().url(profile.endpoint)
+            .header("X-PC-Telemetry-Features", "device-name").build(),
             object : WebSocketListener() {
                 override fun onOpen(webSocket: WebSocket, response: Response) { opened.complete(Unit) }
                 override fun onMessage(webSocket: WebSocket, text: String) {

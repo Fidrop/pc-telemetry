@@ -63,7 +63,7 @@ class DashboardInstrumentedTest {
         }
         rule.onNodeWithText("Enter DEMO").performClick()
         rule.onNodeWithContentDescription("Settings").performClick()
-        rule.onNodeWithText("HUD").performClick()
+        rule.onNodeWithText("HUD").performScrollTo().performClick()
         rule.onNodeWithText("TELEMETRY").performScrollTo().performClick()
         if (InstrumentationRegistry.getArguments().getString("visualCapture") == "true") {
             rule.onNodeWithTag("settings-close").performScrollTo()
@@ -210,10 +210,11 @@ class DashboardInstrumentedTest {
         assertEquals(expectedPin, client.fingerprint(endpoint))
         val profile = client.pair(endpoint, expectedPin, info.getValue("code").jsonPrimitive.content)
         assertEquals(info.getValue("deviceId").jsonPrimitive.content, profile.deviceId)
+        assertEquals(info.getValue("deviceName").jsonPrimitive.content, profile.displayName)
         val model = rule.runOnUiThread {
             ViewModelProvider(rule.activity)[DashboardViewModel::class.java].also {
                 it.updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
-                it.connect(profile)
+                it.connect(profile.copy(displayName = null)) // Existing credentials gain a name from authenticated hello.
             }
         }
         try {
@@ -227,11 +228,30 @@ class DashboardInstrumentedTest {
         val frame = model.state.value.snapshot!!
         assertEquals(profile.deviceId, frame.deviceId)
         assertNotNull(frame.metrics.ram.usedBytes)
+        rule.waitUntil(5000) { model.profile.value?.displayName == profile.displayName }
         val restored = SecureProfileStore(context).load()
         assertEquals(profile, restored)
         val storage = File(context.filesDir, "datastore/connection.preferences_pb").readBytes()
         assertFalse(storage.toString(Charsets.ISO_8859_1).contains(profile.token))
         save("sport-live.png")
+        rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithText(profile.displayName!!).assertIsDisplayed()
+        rule.onNodeWithTag("device-${profile.deviceId}").assertIsOn().performClick()
+        rule.waitUntil(5000) { !model.connectionWanted.value && model.state.value.phase != com.pctelemetry.core.ConnectionPhase.CONNECTED }
+        rule.onNodeWithTag("device-${profile.deviceId}").assertIsOff()
+        assertEquals(profile, SecureProfileStore(context).load())
+        val previousSequence = model.state.value.snapshot!!.sequence
+        rule.onNodeWithTag("device-${profile.deviceId}").performClick()
+        rule.waitUntil(30_000) {
+            model.state.value.phase == com.pctelemetry.core.ConnectionPhase.CONNECTED &&
+                (model.state.value.snapshot?.sequence ?: -1) > previousSequence
+        }
+        rule.onNodeWithTag("device-${profile.deviceId}").assertIsOn()
+        assertEquals(profile, SecureProfileStore(context).load())
+        saveDialog("paired-devices.png")
+        rule.onNodeWithTag("connect-new-device").assertIsDisplayed().performClick()
+        rule.onNodeWithText("PC IP / WSS endpoint").assertIsDisplayed()
+        rule.onNodeWithText("Cancel").performClick()
         rule.runOnUiThread { model.rePair() }
         rule.waitUntil(10_000) { model.profile.value == null }
         assertNull(SecureProfileStore(context).load())

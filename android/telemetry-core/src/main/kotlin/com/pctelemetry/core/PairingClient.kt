@@ -21,7 +21,8 @@ import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 private data class PairResult(val type: String, val version: Int, val requestId: String?,
-    val success: Boolean, val deviceId: String, val credentialId: String?, val token: String?)
+    val success: Boolean, val deviceId: String, val credentialId: String?, val token: String?,
+    val deviceName: String? = null)
 @Serializable
 private data class UnpairResult(val type: String, val version: Int, val requestId: String, val success: Boolean)
 
@@ -67,7 +68,7 @@ class PairingClient(private val factory: SocketFactory = PinnedSocketFactory()) 
                 val result = Protocol.json.decodeFromString<PairResult>(socket.receive() ?: throw java.io.IOException())
                 require(result.type == "pair.result" && result.version == 1 && result.requestId == request && result.success)
                 ConnectionProfile(endpoint, fingerprint, result.deviceId,
-                    requireNotNull(result.credentialId), requireNotNull(result.token)).also { it.validate() }
+                    requireNotNull(result.credentialId), requireNotNull(result.token), result.deviceName).also { it.validate() }
             }
         } finally { socket.close() }
     }

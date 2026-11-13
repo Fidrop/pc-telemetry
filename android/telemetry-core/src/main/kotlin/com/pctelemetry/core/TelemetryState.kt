@@ -30,7 +30,9 @@ data class DashboardState(
     val gpus: List<GpuInfo> = emptyList(),
     val demo: Boolean = false,
     val reconnecting: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val deviceId: String? = null,
+    val deviceName: String? = null
 ) {
     val isOffline: Boolean get() = !demo && snapshot != null &&
         (phase != ConnectionPhase.CONNECTED || (dataAgeMillis ?: Long.MAX_VALUE) >= 5_000)
@@ -62,7 +64,8 @@ class SnapshotState(private val clock: MonotonicClock) {
             session = hello.sessionId
             sequence = -1
         }
-        state = state.copy(gpus = hello.gpuList)
+        hello.deviceName?.let { require(it.isNotBlank() && it.length <= 255 && it.none(Char::isISOControl)) }
+        state = state.copy(gpus = hello.gpuList, deviceId = hello.deviceId, deviceName = hello.deviceName)
     }
     fun accept(snapshot: Snapshot, expectedDevice: String, demo: Boolean = false): Boolean {
         Protocol.validate(snapshot)

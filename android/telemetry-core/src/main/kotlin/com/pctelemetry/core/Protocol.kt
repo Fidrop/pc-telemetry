@@ -32,12 +32,12 @@ data class AuthResult(val type: String, val version: Int, val success: Boolean)
 @Serializable
 data class Hello(
     val type: String, val version: Int, val deviceId: String, val sessionId: String,
-    val supportedVersions: List<Int>, val gpuList: List<GpuInfo>
+    val supportedVersions: List<Int>, val gpuList: List<GpuInfo>, val deviceName: String? = null
 )
 @Serializable
 data class ConnectionProfile(
     val endpoint: String, val fingerprint: String, val deviceId: String,
-    val credentialId: String, val token: String
+    val credentialId: String, val token: String, val displayName: String? = null
 ) {
     fun validate() {
         val uri = java.net.URI(endpoint)
@@ -46,9 +46,21 @@ data class ConnectionProfile(
             uri.path == "/v1/stream" && (uri.port == -1 || uri.port in 1..65535))
         require(fingerprint.matches(Regex("[a-fA-F0-9]{64}")))
         require(deviceId.isNotBlank() && credentialId.isNotBlank())
+        require(displayName == null || (displayName.isNotBlank() && displayName.length <= 255 &&
+            displayName.none { it.isISOControl() }))
         require(Base64.getDecoder().decode(token).size == 32)
     }
     override fun toString() = "ConnectionProfile(credentials redacted)"
+}
+
+@Serializable
+data class SavedConnections(val profiles: List<ConnectionProfile> = emptyList(),
+    val selectedDeviceId: String? = null) {
+    fun validate() {
+        require(profiles.size <= 16 && profiles.map { it.deviceId }.distinct().size == profiles.size)
+        profiles.forEach { it.validate() }
+        require(selectedDeviceId == null || profiles.any { it.deviceId == selectedDeviceId })
+    }
 }
 
 object Protocol {

@@ -9,6 +9,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -24,6 +26,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val state = controller.state
     private val mutableProfile = MutableStateFlow<ConnectionProfile?>(null)
     val profile = mutableProfile.asStateFlow()
+    private val mutableProfiles = MutableStateFlow<List<ConnectionProfile>>(emptyList())
+    val profiles = mutableProfiles.asStateFlow()
+    private val mutableConnectionWanted = MutableStateFlow(false)
+    val connectionWanted = mutableConnectionWanted.asStateFlow()
     private val mutableSettings = MutableStateFlow(UiSettings())
     val settings = mutableSettings.asStateFlow()
     private val mutableError = MutableStateFlow<Int?>(null)
@@ -40,9 +46,26 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             profileGate.withLock {
                 try {
                     mutableProfile.value = store.load()
+                    mutableProfiles.value = store.list()
+                    mutableConnectionWanted.value = mutableProfile.value != null && !paused
                     if (foreground && !demo && !paused) mutableProfile.value?.let(controller::connect)
                 } catch (_: Exception) { mutableError.value = R.string.storage_error }
             }
+        }
+        viewModelScope.launch {
+            state.map { if (it.demo) null else it.deviceId?.let { id -> id to it.deviceName } }
+                .distinctUntilChanged().collect { named ->
+                    if (named?.second != null) profileGate.withLock {
+                        val current = mutableProfile.value
+                        if (current?.deviceId == named.first && current.displayName != named.second) {
+                            try {
+                                store.rename(named.first, named.second!!)
+                                mutableProfile.value = current.copy(displayName = named.second)
+                                mutableProfiles.value = store.list()
+                            } catch (_: Exception) { mutableError.value = R.string.storage_error }
+                        }
+                    }
+                }
         }
         viewModelScope.launch {
             try { mutableSettings.value = settingsStore.settings.first() }
@@ -89,8 +112,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 try {
                     store.save(profile)
                     mutableProfile.value = profile
+                    mutableProfiles.value = store.list()
+                    mutableConnectionWanted.value = true
                     mutableError.value = null; demo = false; paused = false
                     if (foreground) controller.connect(profile)
+                } catch (_: Exception) { mutableError.value = R.string.storage_error }
+            }
+        }
+    }
+    fun reconnect(deviceId: String) {
+        viewModelScope.launch {
+            profileGate.withLock {
+                try {
+                    val saved = store.select(deviceId)
+                    mutableProfile.value = saved
+                    mutableError.value = null; demo = false; paused = false
+                    mutableConnectionWanted.value = true
+                    if (foreground) controller.connect(saved)
                 } catch (_: Exception) { mutableError.value = R.string.storage_error }
             }
         }
@@ -105,20 +143,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
                     catch (_: Exception) { revoked = false }
                 }
-                store.clear()
+                mutableProfile.value?.let { store.remove(it.deviceId) }
                 mutableProfile.value = null
+                mutableProfiles.value = store.list()
+                mutableConnectionWanted.value = false
                 mutableError.value = if (revoked) null else R.string.unpair_failed
                 paused = true; demo = false
             }
         }
     }
     fun selectGpu(id: String) = controller.selectGpu(id)
-    fun startDemo() { demo = true; paused = false; mutableError.value = null; controller.startDemo() }
+    fun startDemo() { demo = true; paused = false; mutableConnectionWanted.value = false; mutableError.value = null; controller.startDemo() }
     fun exitDemo() {
         demo = false
+        paused = false
+        mutableConnectionWanted.value = mutableProfile.value != null
         if (foreground && mutableProfile.value != null) controller.connect(mutableProfile.value!!)
         else controller.stop()
     }
-    fun disconnect() { paused = true; demo = false; controller.stop() }
+    fun disconnect() {
+        paused = true; demo = false; mutableConnectionWanted.value = false; controller.stop()
+        viewModelScope.launch { profileGate.withLock {
+            paused = true; demo = false; mutableConnectionWanted.value = false; controller.stop()
+        } }
+    }
 }
 

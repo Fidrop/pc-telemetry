@@ -27,6 +27,8 @@ ok 为本周期成功采样，stale 为保留的过去成功值，unavailable �
 GPU 列表只在认证后完整发送。内置 WebSocket ping/pong 可检测连接，但不会刷新有效数据时刻。
 
 ## 状态机
+新增可选能力：新客户端在WSS握手中发送 `X-PC-Telemetry-Features: device-name`。服务端只对声明该能力的客户端在认证后的hello和成功pair.result中加入 `deviceName`，值为Windows设备名。未声明时保留原字段集合，避免破坏严格JSON旧客户端。新客户端字段可选，因此仍能连接旧Collector。名称仅用于显示，不参与身份认证；仍固定证书指纹与deviceId。已有配对可在收到认证hello后更新名称，不更换token。
+
 未配置地址先 DISCOVERING，手动输入可直接 PAIRING；已有凭据进入 RECONNECTING。
 TLS 与 auth 成功后仍等待第一条有效 telemetry 才 CONNECTED。连续 5 秒无有效新数据进入 OFFLINE，保留读数与年龄。
 重连尝试使用 1、2、4、8、16、30 秒上限的随机抖动退避，单连接单任务。OFFLINE 标记保留，连接尝试状态另显示 RECONNECTING，不能让重连文案掩盖过期数据。

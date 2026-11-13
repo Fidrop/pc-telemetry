@@ -225,7 +225,9 @@ using (var client = Client(true))
     await client.ConnectAsync(address, deadline.Token);
     await Send(client, new { type = "auth", version = 1, credentialId = identity.Secrets.CredentialId, token = identity.Secrets.Token });
     Check("WSS valid credential accepted", (await Receive(client, "auth.result")).GetProperty("success").GetBoolean());
-    Check("Authenticated hello lists GPUs", (await Receive(client, "hello")).GetProperty("gpuList").GetArrayLength() == 2);
+    var legacyHello = await Receive(client, "hello");
+    Check("Authenticated hello lists GPUs", legacyHello.GetProperty("gpuList").GetArrayLength() == 2);
+    Check("Legacy hello has no new field for strict clients", !legacyHello.TryGetProperty("deviceName", out _));
     var snapshot = Protocol.Decode<Snapshot>((await Receive(client, "telemetry")).GetRawText());
     Protocol.Validate(snapshot);
     Check("WSS snapshot uses expected identity", snapshot.DeviceId == identity.Secrets.DeviceId);
@@ -250,15 +252,18 @@ using (var pairClient = Client(true))
     await Send(pairClient, new { type = "pair.request", version = 1, requestId = "pair-wire", code = wireWindow.Code });
     var result = await Receive(pairClient, "pair.result");
     Check("Pinned WSS pairing returns credential once", result.GetProperty("success").GetBoolean());
+    Check("Legacy pairing has no new field for strict clients", !result.TryGetProperty("deviceName", out _));
     pairedId = result.GetProperty("credentialId").GetString()!;
     pairedToken = result.GetProperty("token").GetString()!;
 }
 using (var pairedClient = Client(true))
 {
+    pairedClient.Options.SetRequestHeader("X-PC-Telemetry-Features", "device-name");
     await pairedClient.ConnectAsync(address, deadline.Token);
     await Send(pairedClient, new { type = "auth", version = 1, credentialId = pairedId, token = pairedToken });
     Check("Paired WSS credential authenticates", (await Receive(pairedClient, "auth.result")).GetProperty("success").GetBoolean());
-    await Receive(pairedClient, "hello");
+    Check("Opted-in hello provides Windows hostname",
+        (await Receive(pairedClient, "hello")).GetProperty("deviceName").GetString() == Environment.MachineName);
     await Receive(pairedClient, "telemetry");
     await Send(pairedClient, new { type = "unpair", version = 1, requestId = "remove-pair" });
     Check("Authenticated unpair acknowledged", (await Receive(pairedClient, "unpair.result")).GetProperty("success").GetBoolean());

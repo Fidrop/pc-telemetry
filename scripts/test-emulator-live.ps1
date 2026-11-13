@@ -1,3 +1,4 @@
+param([ValidatePattern('^[a-zA-Z0-9-]+$')][string]$Prefix = 'stage-5')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $env:DOTNET_ROOT = Join-Path $projectRoot '.tools/dotnet'
@@ -20,9 +21,14 @@ try {
     $adb = Join-Path $projectRoot '.tools/android-sdk/platform-tools/adb.exe'
     & $adb -s emulator-5554 reverse tcp:47631 tcp:47631
     $result = & $adb -s emulator-5554 shell am instrument -w -e class 'com.pctelemetry.dashboard.DashboardInstrumentedTest#realCollectorAndKeystoreOnAndroid' -e livePairingBase64 $encoded com.pctelemetry.dashboard.test/androidx.test.runner.AndroidJUnitRunner
-    $result | Tee-Object (Join-Path $projectRoot 'docs/stage-5-emulator-live-test.txt')
+    $result | Tee-Object (Join-Path $projectRoot "docs/$Prefix-emulator-live-test.txt")
     if (($result -join "`n") -notmatch 'OK \(1 test\)') { throw 'Emulator pairing or secure storage test failed' }
-    & $adb -s emulator-5554 pull /sdcard/Android/data/com.pctelemetry.dashboard/files/qa/ (Join-Path $projectRoot 'docs/qa')
+    $qa = Join-Path $projectRoot "docs/qa/$Prefix"
+    New-Item -ItemType Directory -Force $qa | Out-Null
+    foreach ($name in @('sport-live.png', 'paired-devices.png')) {
+        & $adb -s emulator-5554 pull "/sdcard/Android/data/com.pctelemetry.dashboard/files/qa/$name" "$qa/$name"
+        if ($LASTEXITCODE -ne 0) { throw 'Live screenshot transfer failed' }
+    }
     Write-Output 'PASS Emulator pairing, real telemetry and Android Keystore-backed storage.'
 } finally {
     $pipe.Dispose()

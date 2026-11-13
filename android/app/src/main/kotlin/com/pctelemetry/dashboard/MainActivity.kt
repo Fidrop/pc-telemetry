@@ -236,7 +236,7 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
             else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
         })
     if (pairing || (profile == null && !state.demo && !dismissedInitial)) {
-        PairingDialog(model, profile?.endpoint) { pairing = false; dismissedInitial = true }
+        PairingDialog(model, if (pairing) null else profile?.endpoint) { pairing = false; dismissedInitial = true }
     }
 }
 

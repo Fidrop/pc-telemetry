@@ -26,6 +26,22 @@ class TelemetryTests {
         try { block(); fail("Expected invalid input rejection") } catch (_: IllegalArgumentException) { }
     }
 
+    @Test fun optionalDeviceNamesKeepOldPayloadsReadable() {
+        val legacyProfile = Protocol.json.encodeToString(profile)
+        assertNull(Protocol.json.decodeFromString<ConnectionProfile>(legacyProfile).displayName)
+        val oldHello = Protocol.json.encodeToString(hello())
+        assertNull(Protocol.json.decodeFromString<Hello>(oldHello).deviceName)
+        val named = profile.copy(displayName = "FIDROP-MECH")
+        named.validate()
+        assertEquals(named, Protocol.json.decodeFromString<ConnectionProfile>(Protocol.json.encodeToString(named)))
+        rejected { named.copy(displayName = "line\nbreak").validate() }
+        val model = SnapshotState(MonotonicClock { 0 })
+        model.hello(hello().copy(deviceName = "FIDROP-MECH"), profile)
+        assertEquals("FIDROP-MECH", model.state.deviceName)
+        assertEquals(profile.deviceId, model.state.deviceId)
+        rejected { model.hello(hello().copy(deviceId = "impostor", deviceName = "FIDROP-MECH"), profile) }
+    }
+
     @Test fun sharedFixturesRoundTrip() {
         File(System.getProperty("protocolRoot"), "examples").listFiles()!!
             .filter { it.extension == "json" }.forEach { file ->
