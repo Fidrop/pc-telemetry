@@ -6,7 +6,7 @@ New-Item -ItemType Directory -Force $destinationPath | Out-Null
 $packageRoot = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } elseif (Test-Path "$root/.tools/packages") { "$root/.tools/packages" } else { "$env:USERPROFILE/.nuget/packages" }
 $assets = Get-Content "$root/windows/Collector/obj/project.assets.json" -Raw | ConvertFrom-Json
 $rows = @('Windows dependency metadata (including transitive/runtime packages).',
-    'LibreHardwareMonitorLib is unmodified. Corresponding source: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/tree/b8077435b898d57539956388cddf49f7dacb86f7',
+    'LibreHardwareMonitorLib 0.9.6 is unmodified. Corresponding source: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/tree/3d331e3370efb858411f19511373eff65a218701',
     'Library licenses do not grant a license to the application source. .NET runtime notices are included in the portable folder.', '')
 foreach ($entry in $assets.libraries.PSObject.Properties | Sort-Object Name) {
     if ($entry.Value.type -ne 'package') { continue }

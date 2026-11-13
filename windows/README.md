@@ -3,7 +3,7 @@
 
 ## 构建和检查
 在根目录执行scripts/build-windows.ps1 -Test。依赖已锁定，使用--locked-mode还原。
-LibreHardwareMonitorLib0.9.4采用MPL-2.0，ProtectedData8.0.0及传递依赖随锁文件固定。阶段6发布时整理许可证与通知。
+LibreHardwareMonitorLib0.9.6采用MPL-2.0，ProtectedData8.0.0及传递依赖随锁文件固定。随包提供许可证与通知。0.9.6不再携带WinRing0；本项目不安装PawnIO，缺失传感器显示N/A。
 
 ## 运行
 构建后在PowerShell执行

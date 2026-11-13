@@ -9,6 +9,7 @@ public static class Program
     {
         if (args.Length == 0 || args.Contains("--tray"))
         {
+            if (!Elevation.IsAdministrator()) return Elevation.Restart(args);
             try { return TrayHost.Run(args.Where(arg => arg != "--tray").ToArray()); }
             catch (Exception ex)
             {

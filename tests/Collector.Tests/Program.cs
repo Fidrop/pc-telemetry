@@ -49,6 +49,13 @@ using (var results = profiles.Get())
     Check("LAN addresses exclude loopback", privateNetwork.Addresses.All(address => !System.Net.IPAddress.IsLoopback(address)));
 }
 var at = DateTimeOffset.UtcNow;
+var hardwareLibrary = typeof(LibreHardwareMonitor.Hardware.Computer).Assembly;
+Check("Sensor library has no legacy Ring0 loader",
+    hardwareLibrary.GetType("LibreHardwareMonitor.Hardware.Ring0") is null);
+Check("Sensor library embeds no sys or WinRing0 driver resource",
+    hardwareLibrary.GetManifestResourceNames().All(name =>
+        !name.EndsWith(".sys", StringComparison.OrdinalIgnoreCase) &&
+        !name.Contains("WinRing0", StringComparison.OrdinalIgnoreCase)));
 var registryPath = @"Software\PcTelemetryTests\" + Guid.NewGuid().ToString("N");
 try
 {
