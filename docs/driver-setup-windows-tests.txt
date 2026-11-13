@@ -1,0 +1,111 @@
+  正在确定要还原的项目…
+  所有项目均是最新的，无法还原。
+  Collector -> D:\perf_monitor\windows\Collector\bin\Release\net8.0-windows\Collector.dll
+
+已成功生成。
+    0 个警告
+    0 个错误
+
+已用时间 00:00:03.63
+  正在确定要还原的项目…
+  已还原 D:\perf_monitor\tests\Collector.Tests\Collector.Tests.csproj (用时 337 毫秒)。
+  1 个项目(共 2 个)是最新的，无法还原。
+PASS LAN adapter selection matches Windows private/domain profiles
+PASS LAN addresses exclude loopback
+PASS Sensor library has no legacy Ring0 loader
+PASS Sensor library embeds no sys or WinRing0 driver resource
+PASS Autostart starts disabled in isolated key
+PASS Autostart quotes paths containing spaces
+PASS Autostart can be disabled
+PASS CPU total mapping
+PASS CPU Package priority
+PASS CPU hottest core fallback
+PASS CPU missing stays null
+PASS CPU invalid load rejected
+PASS GPU core mapping
+PASS GPU temperature mapping
+PASS Non-finite sensor rejected
+PASS Dedicated VRAM bytes and percent
+PASS Integrated shared memory excluded
+PASS Missing VRAM total stays null
+PASS Invalid capacity rejected
+PASS Zero total rejected
+PASS Zero usage is valid
+PASS Default discrete GPU
+PASS Manual GPU selection
+PASS Unknown GPU does not select another
+PASS Intel mobile Arc stays integrated
+PASS Intel discrete Arc recognized
+PASS Three slow updates throttle group
+PASS Fast recovery restores 1Hz
+PASS Failure throttles group
+PASS Stale retains original time and value
+PASS Protocol round trip telemetry.demo.json
+PASS Protocol round trip telemetry.missing.demo.json
+PASS Unknown protocol version
+PASS Out-of-range percent
+PASS Unavailable value rejected
+PASS Capacity mismatch rejected
+PASS Unknown JSON fields rejected
+PASS Required sequence field enforced
+PASS DPAPI identity and certificate persist
+PASS Invalid token rejected
+PASS Valid token accepted
+PASS Token absent from stored ciphertext
+PASS Slow subscriber retains latest only
+PASS GPU choice rejects unknown
+PASS GPU choice persists
+PASS Pairing locks after five failures
+PASS Pairing expires at 120 seconds
+PASS One-time pairing issues random credential
+PASS Pairing code consumed once
+PASS Paired credential authenticates
+PASS Paired credential persists under DPAPI
+PASS Revocation invalidates credential
+PASS Concurrent pairing consumes code atomically
+PASS Closing pairing window cancels code
+PASS TLS wrong certificate pin rejected
+PASS WSS incorrect credential rejected
+PASS WSS valid credential accepted
+PASS Authenticated hello lists GPUs
+PASS Legacy hello has no new field for strict clients
+PASS WSS snapshot uses expected identity
+PASS GPU selection acknowledgement
+PASS Old GPU snapshot suppressed after acknowledgement
+PASS Unknown GPU command returns error
+PASS Selected GPU resumes telemetry
+PASS Pinned WSS pairing returns credential once
+PASS Legacy pairing has no new field for strict clients
+PASS Paired WSS credential authenticates
+PASS Opted-in hello provides Windows hostname
+PASS Authenticated unpair acknowledged
+PASS Unpair removes long-term credential
+PASS Worker pipe receives fixture snapshot
+Sensor worker unavailable; retaining stale values and scheduling recovery.
+PASS Hung worker is recycled and retains stale data
+PASS Replacement worker excludes quarantined group
+PASS Missing driver prompts on first startup
+PASS Installed usable driver skips setup
+PASS Old or unavailable drivers are not ready
+PASS Deferring setup survives restart
+PASS Confirmed setup verifies then installs and rechecks availability
+PASS Ready driver is not downloaded or installed again
+PASS Setup handles hash without claiming success
+PASS Setup handles signature without claiming success
+PASS Setup handles network without claiming success
+PASS Setup handles exit without claiming success
+PASS Setup handles missing-after-exit without claiming success
+PASS Setup handles cancel without claiming success
+PASS Setup preserves Windows restart requirement 3010
+PASS Setup preserves Windows restart requirement 1641
+PASS Setup preserves Windows restart requirement 0
+PASS Setup cleans its temporary installer folders
+PASS Native Windows signature verifier rejects unsigned content
+PASS Native Windows signature verifier accepts trusted signed executable
+PASS Missing-driver explanation remains visible
+PASS Setup dialog missing respects user action
+PASS Setup dialog ready respects user action
+PASS Failed setup offers retry and defer
+PASS Setup dialog failure respects user action
+PASS Setup dialog success respects user action
+RESULT 97 checks passed. Hardware compatibility and performance are tested separately.

@@ -20,6 +20,7 @@ Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主
 - [SPORT拾音条与灵敏度](docs/microphone-report.md)
 - [Windows驱动安全与管理员启动修复](docs/windows-security-report.md)
 - [已配对设备勾选连接与电脑名称](docs/paired-devices-report.md)
+- [PC首次温度驱动安装引导](docs/driver-setup-report.md)
 - [依赖与工程方案](docs/architecture.md)
 - [协议草案](protocol/README.md)
 - [安全方案](docs/security.md)

@@ -4,6 +4,12 @@ using System.Text;
 using System.Text.Json;
 using PcTelemetry;
 
+if (args.Length == 1 && args[0] == "--driver-download-check")
+{
+    await DriverSetupTests.DownloadCheckAsync();
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--pairing-host")
 {
     await PairingFixtureHost.RunAsync(args[1]);
@@ -291,4 +297,5 @@ await using (var worker = new WorkerSupervisor(pipeName =>
     Check("Replacement worker excludes quarantined group",
         recovered.Timings.Any(t => t.Id == "fixture-hung" && t.Status == "excluded"));
 }
+await DriverSetupTests.RunAsync(Check, fixtureRoot);
 Console.WriteLine($"RESULT {passed} checks passed. Hardware compatibility and performance are tested separately.");

@@ -20,3 +20,5 @@
 
 2026-11-13当前Android1.0-preview9：设置顶部改为已配对设备勾选连接列表，可保存多台、手动断开后直接重连，连接新设备纳入列表；显示Windows设备名FIDROP-MECH。旧加密配对自动迁移，身份校验不变。见paired-devices-report.md。
 Windows采集库升级为LibreHardwareMonitorLib0.9.6，移除引发Defender检测的WinRing0依赖；正常双击/托盘启动自动请求管理员授权，取消即退出。真实管理员进程与Defender开启时的目录扫描通过，见windows-security-report.md。旧发布页已加安全告知。
+
+2026-11-13 Windows1.0-preview10：首次缺失温度采集驱动时提供确认安装/暂缓引导，联网下载固定官方PawnIO2.2.0并验证哈希与数字签名；已有可用驱动跳过，托盘支持补装与成功后自动重启采集，保留配对。Windows97项检查、实际下载校验、已有驱动时12帧真实温度及Defender扫描通过，见driver-setup-report.md。Android沿用1.0-preview9。

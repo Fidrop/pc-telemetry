@@ -10,6 +10,14 @@ public static class TrayHost
         var options = Options.Parse(args) with { Lan = true };
         using var context = new CollectorTrayContext(options);
         Application.Run(context);
+        if (context.RestartRequested)
+        {
+            var start = new System.Diagnostics.ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "Collector.exe"))
+            { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = AppContext.BaseDirectory };
+            start.ArgumentList.Add("--tray");
+            foreach (var argument in args) start.ArgumentList.Add(argument);
+            using var child = System.Diagnostics.Process.Start(start);
+        }
         return context.ExitCode;
     }
 }
@@ -21,11 +29,13 @@ internal sealed class CollectorTrayContext : ApplicationContext
     private readonly NotifyIcon icon;
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 1000 };
     private readonly ToolStripMenuItem status = new("正在启动");
-    private readonly Task execution;
+    private readonly Task execution = Task.CompletedTask;
     private readonly StartupRegistration startupRegistration = new(Registry.CurrentUser,
         Path.Combine(AppContext.BaseDirectory, "Collector.exe"));
     private Form? pairingForm;
     public int ExitCode { get; private set; }
+    public bool RestartRequested { get; private set; }
+    private bool driverDialogOpen;
 
     public CollectorTrayContext(Options options)
     {
@@ -34,6 +44,11 @@ internal sealed class CollectorTrayContext : ApplicationContext
         status.Enabled = false;
         menu.Items.Add(status);
         menu.Items.Add("打开配对信息", null, (_, _) => ShowPairing(options.Port));
+        menu.Items.Add("温度采集驱动", null, (_, _) =>
+        {
+            if (driverDialogOpen) return;
+            if (ShowDriverSetup(options.Directory)) { RestartRequested = true; ExitThread(); }
+        });
         var startup = new ToolStripMenuItem("开机自启") { Checked = startupRegistration.Enabled };
         startup.Click += (_, _) =>
         {
@@ -57,6 +72,8 @@ internal sealed class CollectorTrayContext : ApplicationContext
         icon = new NotifyIcon { Icon = SystemIcons.Application, Text = "PC Telemetry", Visible = true,
             ContextMenuStrip = menu };
         icon.DoubleClick += (_, _) => ShowPairing(options.Port);
+        var driverPreference = new DriverSetupPreference(options.Directory);
+        if (driverPreference.ShouldPrompt(PawnIoStatus.Read())) ShowDriverSetup(options.Directory);
         execution = Task.Run(() => runtime.RunAsync(cancellation.Token));
         timer.Tick += (_, _) =>
         {
@@ -71,8 +88,32 @@ internal sealed class CollectorTrayContext : ApplicationContext
         timer.Start();
     }
 
+    private bool ShowDriverSetup(string directory)
+    {
+        driverDialogOpen = true;
+        if (icon.ContextMenuStrip is { } menu) menu.Enabled = false;
+        try
+        {
+            using var dialog = new DriverSetupDialog();
+            var result = dialog.ShowDialog();
+            if (result != DialogResult.OK)
+            {
+                try { new DriverSetupPreference(directory).Defer(); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { Console.Error.WriteLine("Could not save driver setup preference."); }
+            }
+            return result == DialogResult.OK;
+        }
+        finally
+        {
+            driverDialogOpen = false;
+            if (icon.ContextMenuStrip is { } restoredMenu) restoredMenu.Enabled = true;
+        }
+    }
+
     private void ShowPairing(int port)
     {
+        if (driverDialogOpen) return;
         if (pairingForm is not null) { pairingForm.Activate(); return; }
         var window = runtime.Pairing.OpenWindow();
         var form = new Form { Text = "PC Telemetry · 首次配对", Width = 700, Height = 420,

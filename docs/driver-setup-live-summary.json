@@ -1,0 +1,8 @@
+{
+  "Frames": 12,
+  "CpuTemperatureStatus": "ok",
+  "CpuMin": 52.0,
+  "CpuMax": 80.0,
+  "DeferralMarkerCreated": false,
+  "ExistingPawnIOVersion": "2.1.0.0"
+}

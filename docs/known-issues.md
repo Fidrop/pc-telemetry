@@ -2,11 +2,11 @@
 
 本版本已通过本机与Android10模拟器验证，仍有以下限制，不代表最终生产验收完成。
 
-- preview7/preview8的Windows包包含旧WinRing0依赖，会触发Defender易受攻击驱动检测。修复版升级至LibreHardwareMonitorLib 0.9.6，不再携带该驱动且不自动安装PawnIO；请使用全新解压目录，不要覆盖旧包混用文件。
+- preview7/preview8的Windows包包含旧WinRing0依赖，会触发Defender易受攻击驱动检测。修复版升级至LibreHardwareMonitorLib 0.9.6，不再携带该驱动；Preview 10首次检测缺失时提示用户确认安装PawnIO，可暂缓并从托盘补装。请使用全新解压目录，不要覆盖旧包混用文件。
 - 托盘启动自动请求管理员授权；取消即退出。开机自启仍需Windows允许启动及用户完成授权，尚未实测重新登录流程。Windows包未签名，发布者显示为未知；管理员授权与安全软件告警是不同机制。
 
 - Windows托盘与隔离worker合计工作集超过80MB目标；短测CPU均值较低，不能据此证明游戏FPS影响≤1%。详见stage-6-report.md和原始测量。
-- 本机Intel Ultra5 226V/Arc130V的CPU/GPU温度与专用VRAM不可用，正确显示N/A。
+- 本机Intel Ultra5 226V安装PawnIO后CPU温度已恢复；Arc130V的GPU温度与专用VRAM仍不可用，显示N/A。
 - 实体小米8/HyperOS、Windows10、AMD/NVIDIA及多GPU真实设备尚未验证。模拟器通过不等同于手机通过。
 - 真实两设备局域网mDNS、防火墙首次提示、开机重新登录自启、睡眠/断网恢复和4小时稳定性尚未完整实测。
 - 网络配置变化后需重启Windows端。多网卡/VPN/虚拟网卡环境可能需要手动选用正确地址。

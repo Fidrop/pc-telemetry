@@ -6,6 +6,7 @@ $windowsPath = Join-Path $root $WindowsDirectory
 $apk = Join-Path $root 'android/app/build/outputs/apk/debug/app-debug.apk'
 if (!(Test-Path "$windowsPath/Collector.exe") -or !(Test-Path $apk)) { throw 'Build Windows portable and Android Debug first' }
 $sensorVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo("$windowsPath/LibreHardwareMonitorLib.dll").FileVersion
+$windowsVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo("$windowsPath/Collector.dll").ProductVersion.Split('+')[0]
 if ($sensorVersion -ne '0.9.6.0' -or @(Get-ChildItem -LiteralPath $windowsPath -Recurse -Filter '*.sys').Count -gt 0) {
     throw 'Refusing an outdated or mixed Windows folder. Publish the fixed sensor dependency into a fresh directory first.'
 }
@@ -37,13 +38,13 @@ if (Test-Path "$root/docs/engine-control-report.md") {
 if (Test-Path "$root/docs/microphone-report.md") {
     Copy-Item "$root/docs/microphone-report.md" "$folder/拾音条与灵敏度说明.md"
 }
-foreach ($report in @('windows-security-report.md', 'paired-devices-report.md')) {
+foreach ($report in @('windows-security-report.md', 'paired-devices-report.md', 'driver-setup-report.md')) {
     if (Test-Path "$root/docs/$report") { Copy-Item "$root/docs/$report" "$folder/$report" }
 }
 $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source commit' }
 [ordered]@{ SourceCommit = $sourceCommit; BuiltAt = (Get-Date).ToString('o');
-    Windows = 'win-x64 self-contained, .NET 8.0.33'; Android = "$androidVersion Debug, min API29";
+    Windows = "$windowsVersion win-x64 self-contained, .NET 8.0.33"; Android = "$androidVersion Debug, min API29";
     Acceptance = 'Preview; hardware, memory target, game impact and long-run acceptance remain open'
 } | ConvertTo-Json | Set-Content "$folder/build-info.json" -Encoding utf8
 $files = @(Get-ChildItem -LiteralPath $folder -File -Recurse)

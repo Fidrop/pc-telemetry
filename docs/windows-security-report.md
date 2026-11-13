@@ -1,6 +1,6 @@
 # Windows 驱动安全与管理员启动修复
 
-2026-11-13。本次修复适用于下一版 Windows 完整运行包。
+2026-11-13。以下为 Preview 9 的安全修复记录。Preview 10 新增经用户确认的 PawnIO 安装引导，见 driver-setup-report.md。
 
 ## 原因与处理
 

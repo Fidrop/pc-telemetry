@@ -1,0 +1,2 @@
+PASS Real official HTTPS download, fixed SHA256, native Windows Authenticode validation and cleanup.
+Controlled process boundary: installer was not executed; the installed system driver was unchanged.
