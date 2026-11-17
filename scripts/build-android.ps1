@@ -1,4 +1,5 @@
-param([switch]$LiveTests, [switch]$SkipLint)
+param([switch]$LiveTests, [switch]$SkipLint,
+    [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $localJdk = Get-ChildItem (Join-Path $projectRoot '.tools/jdk17') -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -24,8 +25,8 @@ if ($LiveTests) {
     if ([string]::IsNullOrWhiteSpace($env:PC_TELEMETRY_TEST_PROFILE)) { throw 'Use test-android-live.ps1 to supply an in-memory test profile' }
     $arguments += @(':telemetry-core:test', '--tests', '*LiveIntegrationTest', '--rerun-tasks')
 } else {
-    $arguments += @(':telemetry-core:test', ':app:assembleDebug')
-    if (-not $SkipLint) { $arguments += ':app:lintDebug' }
+    $arguments += @(':telemetry-core:test', ":app:assemble$Configuration")
+    if (-not $SkipLint) { $arguments += ":app:lint$Configuration" }
 }
 & $gradle @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Android build or tests failed' }

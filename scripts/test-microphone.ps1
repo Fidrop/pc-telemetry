@@ -1,16 +1,18 @@
 param([ValidatePattern('^emulator-\d+$')][string]$Device = 'emulator-5554',
-    [ValidatePattern('^[a-zA-Z0-9-]+$')][string]$Prefix = 'microphone')
+    [ValidatePattern('^[a-zA-Z0-9-]+$')][string]$Prefix = 'microphone',
+    [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 # Dedicated emulator only: the tests deliberately change this app's preferences and microphone grant.
-& "$PSScriptRoot/build-android.ps1"
+& "$PSScriptRoot/build-android.ps1" -Configuration $Configuration
 $gradle = if (Test-Path "$root/.tools/gradle/gradle-8.11.1/bin/gradle.bat") {
     "$root/.tools/gradle/gradle-8.11.1/bin/gradle.bat"
 } else { "$root/android/gradlew.bat" }
 $adb = Join-Path $env:ANDROID_HOME 'platform-tools/adb.exe'
 & $gradle -p "$root/android" :app:assembleDebugAndroidTest --console plain
 if ($LASTEXITCODE -ne 0) { throw 'Microphone instrumentation build failed' }
-foreach ($apk in @('apk/debug/app-debug.apk', 'apk/androidTest/debug/app-debug-androidTest.apk')) {
+$variant = $Configuration.ToLowerInvariant()
+foreach ($apk in @("apk/$variant/app-$variant.apk", 'apk/androidTest/debug/app-debug-androidTest.apk')) {
     & $adb -s $Device install -r "$root/android/app/build/outputs/$apk"
     if ($LASTEXITCODE -ne 0) { throw 'Microphone test APK install failed' }
 }

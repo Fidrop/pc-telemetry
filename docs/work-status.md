@@ -24,3 +24,5 @@ Windows采集库升级为LibreHardwareMonitorLib0.9.6，移除引发Defender检�
 2026-11-13 Windows1.0-preview10：首次缺失温度采集驱动时提供确认安装/暂缓引导，联网下载固定官方PawnIO2.2.0并验证哈希与数字签名；已有可用驱动跳过，托盘支持补装与成功后自动重启采集，保留配对。Windows97项检查、实际下载校验、已有驱动时12帧真实温度及Defender扫描通过，见driver-setup-report.md。Android沿用1.0-preview9。
 
 2026-11-17 Android1.0-preview11界面审阅构建：按已确认示例优化SPORT金属表圈/指针/数字层级、HUD曲线与面板、三页签双栏设置；不优化异常反馈。core19项、设置2项、主界面4项、麦克风3项、真实联调1项、存储2项及帧耗时/最终截图采集通过。软件模拟器p95约28/30ms，仍未达到60fps帧预算。按用户“不直接合并”要求推送codex/ui-polish独立分支并提供预览安装包，main保持原状。详细记录见ui-polish-report.md。
+
+2026-11-17用户明确授权合并codex/ui-polish并发布正式Release。发布版本统一1.0.0：Android versionCode12，Release构建、调试标记关闭，保留既有签名以支持覆盖升级；Windows产品版本1.0.0。Windows97项、核心19项、实际Release APK界面6项、麦克风3项、真实联调1项和存储2项通过。Release Lint0错误20警告，实机和性能限制仍按known-issues.md保留；详见release-1.0.0.md。

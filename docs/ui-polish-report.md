@@ -1,8 +1,8 @@
-# SPORT / HUD 与分页设置界面预览
+# SPORT / HUD 与分页设置优化记录
 
 2026-11-17。Android 1.0-preview11（versionCode 11），Windows沿用1.0-preview10。
 
-改动位于 `codex/ui-polish`，以用户确认的效果示例为方向，先提供可安装的审阅构建，不直接合并main。
+以下保留 `codex/ui-polish` 的审阅构建与测试记录。用户随后授权合并和正式发布；1.0.0的Release构建验证与交付说明见[正式发布记录](release-1.0.0.md)。
 
 ## 实现
 
@@ -57,4 +57,4 @@ API29软件渲染模拟器，2248×1080、density420、2核、1536MiB，各主�
 
 ## 交付
 
-Android更新为Preview11，PC沿用Preview10的驱动引导与安全修复。源码和运行包记录本分支及精确提交，保持main未合并；安装包可用于用户审阅后决定是否合并。
+原审阅交付为Android Preview11与PC Preview10。用户确认后将本分支纳入1.0.0，正式交付以release-1.0.0.md和GitHub v1.0.0 Release为准。

@@ -9,7 +9,10 @@ internal static class PairingFixtureHost
     {
         var directory = Environment.GetEnvironmentVariable("PC_TELEMETRY_TEST_DIRECTORY")
             ?? throw new InvalidOperationException("Missing test directory");
-        await using var runtime = new CollectorRuntime(Options.Parse(["--data-dir", directory]));
+        var port = int.TryParse(Environment.GetEnvironmentVariable("PC_TELEMETRY_TEST_PORT"), out var configuredPort)
+            ? configuredPort : 47631;
+        await using var runtime = new CollectorRuntime(Options.Parse(["--data-dir", directory, "--port",
+            port.ToString(System.Globalization.CultureInfo.InvariantCulture)]));
         using var cancellation = new CancellationTokenSource();
         var execution = runtime.RunAsync(cancellation.Token);
         using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
@@ -17,7 +20,7 @@ internal static class PairingFixtureHost
         using var writer = new StreamWriter(pipe, new UTF8Encoding(false), 4096, true) { AutoFlush = true };
         using var reader = new StreamReader(pipe, Encoding.UTF8, false, 4096, true);
         var window = runtime.Pairing.OpenWindow();
-        var information = new { endpoint = "wss://127.0.0.1:47631/v1/stream",
+        var information = new { endpoint = $"wss://127.0.0.1:{port}/v1/stream",
             fingerprint = runtime.Identity.Fingerprint, code = window.Code, deviceId = runtime.Identity.Secrets.DeviceId,
             deviceName = Environment.MachineName };
         await writer.WriteLineAsync(JsonSerializer.Serialize(information, Protocol.Json));
