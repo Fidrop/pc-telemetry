@@ -30,7 +30,7 @@ internal fun HudScene(paint: Paint, rogBranding: Boolean) {
         val stars = Random(71)
         repeat(150) {
             val point = Offset(stars.nextFloat() * WIDTH, stars.nextFloat() * HEIGHT)
-            drawCircle(Cyan.copy(alpha = stars.nextFloat() * 0.33f + 0.08f), if (it % 9 == 0) 1.3f else 0.6f, point)
+            drawCircle(Cyan.copy(alpha = stars.nextFloat() * 0.17f + 0.03f), if (it % 9 == 0) 1.1f else 0.6f, point)
         }
         for (x in 20..1754 step 42) drawLine(Cyan.copy(alpha = 0.025f), Offset(x.toFloat(), 110f), Offset(x.toFloat(), 845f))
         for (y in 110..845 step 42) drawLine(Cyan.copy(alpha = 0.025f), Offset(20f, y.toFloat()), Offset(1754f, y.toFloat()))
@@ -44,13 +44,13 @@ internal fun HudScene(paint: Paint, rogBranding: Boolean) {
         label(paint, "HARDWARE  /  FLIGHT DECK", 184f, 78f, 13f, Cyan.copy(alpha = 0.7f))
         drawLine(Cyan.copy(alpha = 0.6f), Offset(175f, 92f), Offset(590f, 92f), 1f)
         for (index in 0..2) slash(Offset(600f + index * 12, 37f), Cyan.copy(alpha = 0.5f))
-        hudPanel(Offset(1510f, 20f), Size(190f, 60f), Cyan)
-        label(paint, "HUD MODE", 1534f, 59f, 24f, Cyan)
+        hudPanel(Offset(1480f, 20f), Size(170f, 60f), Cyan)
+        label(paint, "HUD MODE", 1500f, 59f, 23f, Cyan)
 
         // Asymmetric, double-edged cut panels with physical-looking mounting details.
         hudPanel(Offset(40f, 150f), Size(370f, 218f), Cyan)
         hudPanel(Offset(40f, 390f), Size(370f, 220f), Cyan)
-        hudPanel(Offset(450f, 150f), Size(910f, 460f), Cyan)
+        hudPanel(Offset(450f, 150f), Size(910f, 460f), Cyan, primary = true)
         hudPanel(Offset(1400f, 150f), Size(334f, 212f), Cyan)
         hudPanel(Offset(1400f, 382f), Size(334f, 228f), Cyan)
         // Thin topological lines and restrained hatch tabs add depth without invented metrics.
@@ -81,14 +81,14 @@ internal fun HudScene(paint: Paint, rogBranding: Boolean) {
         drawLine(Cyan.copy(alpha = 0.3f), Offset(475f, 216f), Offset(1335f, 216f))
         for (index in 0..4) {
             val y = 540f - index * 72.5f
-            drawLine(Cyan.copy(alpha = 0.23f), Offset(550f, y), Offset(1300f, y), 1f,
+            drawLine(Cyan.copy(alpha = 0.14f), Offset(550f, y), Offset(1300f, y), 1f,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(2f, 5f)))
             label(paint, "${index * 25}%", 477f, y + 7, 19f, Silver)
             drawLine(Cyan, Offset(543f, y), Offset(550f, y), 1.5f)
         }
         for (index in 0..6) {
             val x = 550f + index * 125
-            drawLine(Cyan.copy(alpha = 0.18f), Offset(x, 250f), Offset(x, 540f), 1f,
+            drawLine(Cyan.copy(alpha = 0.1f), Offset(x, 250f), Offset(x, 540f), 1f,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(2f, 5f)))
             label(paint, if (index == 6) "Now" else "-${60 - index * 10}s", x, 578f, 18f, Silver, true)
             drawLine(Cyan, Offset(x, 540f), Offset(x, 547f), 1.5f)
@@ -119,7 +119,7 @@ internal fun HudScene(paint: Paint, rogBranding: Boolean) {
     } }
 }
 
-private fun DrawScope.hudPanel(origin: Offset, size: Size, color: Color) {
+private fun DrawScope.hudPanel(origin: Offset, size: Size, color: Color, primary: Boolean = false) {
     val (x, y) = origin
     val w = size.width; val h = size.height; val cut = 22f
     val panel = Path().apply {
@@ -128,11 +128,11 @@ private fun DrawScope.hudPanel(origin: Offset, size: Size, color: Color) {
         lineTo(x + cut, y + h); lineTo(x, y + h - cut); lineTo(x, y + cut); close()
     }
     drawPath(panel, Brush.verticalGradient(listOf(Color(0xEF081D29), Color(0xF0020C14)), y, y + h))
-    drawPath(panel, color.copy(alpha = 0.05f), style = Stroke(9f))
-    drawPath(panel, color.copy(alpha = 0.56f), style = Stroke(1.2f))
+    drawPath(panel, color.copy(alpha = if (primary) 0.04f else 0.02f), style = Stroke(6f))
+    drawPath(panel, color.copy(alpha = if (primary) 0.58f else 0.32f), style = Stroke(1.2f))
     val edge = Path().apply { moveTo(x, y + 35); lineTo(x, y + cut); lineTo(x + cut, y); lineTo(x + 96, y)
         moveTo(x + w - 65, y + h); lineTo(x + w - cut, y + h); lineTo(x + w, y + h - cut); lineTo(x + w, y + h - 40) }
-    drawPath(edge, color, style = Stroke(2.3f))
+    drawPath(edge, color.copy(alpha = if (primary) 0.95f else 0.67f), style = Stroke(2f))
     drawLine(color.copy(alpha = 0.17f), Offset(x + cut + 8, y + 7), Offset(x + w - cut - 8, y + 7))
     for (point in listOf(Offset(x + 12, y + h - 25), Offset(x + w - 12, y + 25)))
         drawCircle(color.copy(alpha = 0.6f), 1.5f, point)
@@ -208,7 +208,7 @@ private fun DrawScope.earthHorizon() {
         }
     }
     drawPath(horizon, Color(0xFF55D6FC).copy(alpha = 0.35f), style = Stroke(7f))
-    drawPath(horizon, Color(0xFFB3F3FF), style = Stroke(1.4f))
+    drawPath(horizon, Color(0xFFB3F3FF).copy(alpha = 0.55f), style = Stroke(1.2f))
 }
 private fun DrawScope.spacecraft(origin: Offset) {
     withTransform({ translate(origin.x, origin.y); rotate(-16f, Offset.Zero) }) {

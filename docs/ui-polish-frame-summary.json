@@ -1,0 +1,20 @@
+[
+  {
+    "Theme": "sport",
+    "CaptureSeconds": 15,
+    "Frames": 352,
+    "JankyPercent": 75.85,
+    "P50Ms": 20,
+    "P95Ms": 28,
+    "P99Ms": 34
+  },
+  {
+    "Theme": "hud",
+    "CaptureSeconds": 15,
+    "Frames": 821,
+    "JankyPercent": 96.83,
+    "P50Ms": 22,
+    "P95Ms": 30,
+    "P99Ms": 42
+  }
+]

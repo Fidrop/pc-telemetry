@@ -1,0 +1,8 @@
+11-17 09:31:45.133  3868  3887 I System.out: MIC CHECK active recording session established
+11-17 09:31:45.904  3868  3887 I System.out: MIC CHECK sensitivity selected=19 stored=19
+11-17 09:31:45.906  3868  3887 I System.out: MIC CHECK sensitivity persisted without replacing recording session
+11-17 09:31:46.860  3868  3887 I System.out: MIC CHECK HUD released microphone
+11-17 09:31:48.087  3868  3887 I System.out: MIC CHECK background released and foreground resumed microphone
+11-17 09:31:49.419  3868  3887 I System.out: MIC CHECK switch off: stored=false
+11-17 09:31:49.420  3868  3887 I System.out: MIC CHECK disabled preference persisted
+11-17 09:31:49.721  3868  3887 I System.out: MIC CHECK engine-off released microphone

@@ -18,6 +18,8 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $folder = Join-Path $root "artifacts/PC-Telemetry-preview-$stamp"
 New-Item -ItemType Directory -Path $folder | Out-Null
 Copy-Item -LiteralPath $windowsPath -Destination "$folder/Windows-x64" -Recurse
+Copy-Item "$root/docs/user-guide.md" "$folder/Windows-x64/使用说明.md"
+Copy-Item "$root/docs/known-issues.md" "$folder/Windows-x64/已知问题.md"
 Copy-Item -LiteralPath $apk -Destination "$folder/PC-Telemetry-$androidVersion-debug.apk"
 Copy-Item "$root/artifacts/notices" "$folder/notices" -Recurse
 Copy-Item "$root/docs/user-guide.md" "$folder/使用说明.md"
@@ -38,12 +40,14 @@ if (Test-Path "$root/docs/engine-control-report.md") {
 if (Test-Path "$root/docs/microphone-report.md") {
     Copy-Item "$root/docs/microphone-report.md" "$folder/拾音条与灵敏度说明.md"
 }
-foreach ($report in @('windows-security-report.md', 'paired-devices-report.md', 'driver-setup-report.md')) {
+foreach ($report in @('windows-security-report.md', 'paired-devices-report.md', 'driver-setup-report.md', 'ui-polish-report.md')) {
     if (Test-Path "$root/docs/$report") { Copy-Item "$root/docs/$report" "$folder/$report" }
 }
 $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source commit' }
-[ordered]@{ SourceCommit = $sourceCommit; BuiltAt = (Get-Date).ToString('o');
+$sourceBranch = (& git -C $root rev-parse --abbrev-ref HEAD).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source branch' }
+[ordered]@{ SourceCommit = $sourceCommit; SourceBranch = $sourceBranch; BuiltAt = (Get-Date).ToString('o');
     Windows = "$windowsVersion win-x64 self-contained, .NET 8.0.33"; Android = "$androidVersion Debug, min API29";
     Acceptance = 'Preview; hardware, memory target, game impact and long-run acceptance remain open'
 } | ConvertTo-Json | Set-Content "$folder/build-info.json" -Encoding utf8

@@ -24,7 +24,12 @@ class DashboardPerformanceTest {
             instrumentation.uiAutomation.executeShellCommand(command)).bufferedReader().use { it.readText() }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             Thread.sleep(3000)
-            scenario.onActivity { ViewModelProvider(it)[DashboardViewModel::class.java].startDemo() }
+            scenario.onActivity {
+                ViewModelProvider(it)[DashboardViewModel::class.java].apply {
+                    updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+                    startDemo()
+                }
+            }
             for (theme in DashboardTheme.entries) {
                 scenario.onActivity { activity ->
                     ViewModelProvider(activity)[DashboardViewModel::class.java].changeSettings { it.copy(theme = theme) }

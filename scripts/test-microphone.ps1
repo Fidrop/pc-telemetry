@@ -1,4 +1,5 @@
-param([ValidatePattern('^emulator-\d+$')][string]$Device = 'emulator-5554')
+param([ValidatePattern('^emulator-\d+$')][string]$Device = 'emulator-5554',
+    [ValidatePattern('^[a-zA-Z0-9-]+$')][string]$Prefix = 'microphone')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 # Dedicated emulator only: the tests deliberately change this app's preferences and microphone grant.
@@ -18,24 +19,24 @@ try {
     $denied = & $adb -s $Device shell am instrument -w -e class `
         'com.pctelemetry.dashboard.MicrophoneInstrumentedTest#permissionDeniedDoesNotEnableCapture' `
         com.pctelemetry.dashboard.test/androidx.test.runner.AndroidJUnitRunner
-    $denied | Tee-Object "$root/docs/microphone-denied-tests.txt"
+    $denied | Tee-Object "$root/docs/$Prefix-denied-tests.txt"
     if (($denied -join "`n") -notmatch 'OK \(1 test\)') { throw 'Microphone permission denial test failed' }
     # Grant through Android's actual permission dialog, so runtime permission and AppOps agree.
     $active = & $adb -s $Device shell am instrument -w -e class `
         'com.pctelemetry.dashboard.MicrophoneInstrumentedTest#microphoneLifecycleSwitchAndSensitivity,com.pctelemetry.dashboard.MicrophoneInstrumentedTest#sensitivityReducesLoudSignalsWithoutInventingSilence' `
         com.pctelemetry.dashboard.test/androidx.test.runner.AndroidJUnitRunner
-    $active | Tee-Object "$root/docs/microphone-active-tests.txt"
+    $active | Tee-Object "$root/docs/$Prefix-active-tests.txt"
     if (($active -join "`n") -notmatch 'OK \(2 tests\)') { throw 'Microphone lifecycle or sensitivity test failed' }
-    New-Item -ItemType Directory -Force "$root/docs/qa/microphone" | Out-Null
+    New-Item -ItemType Directory -Force "$root/docs/qa/$Prefix" | Out-Null
     foreach ($name in @('sport-microphone.png','microphone-settings.png')) {
-        & $adb -s $Device pull "/sdcard/Android/data/com.pctelemetry.dashboard/files/qa/$name" "$root/docs/qa/microphone/$name"
+        & $adb -s $Device pull "/sdcard/Android/data/com.pctelemetry.dashboard/files/qa/$name" "$root/docs/qa/$Prefix/$name"
         if ($LASTEXITCODE -ne 0) { throw 'Microphone screenshot transfer failed' }
     }
     & $adb -s $Device logcat -d -t 700 | Select-String 'MIC CHECK' | ForEach-Object { $_.Line } |
-        Set-Content "$root/docs/microphone-release-checks.txt" -Encoding utf8
+        Set-Content "$root/docs/$Prefix-release-checks.txt" -Encoding utf8
     'PASS Native grant/denial, recording lifecycle, persistent sensitivity and signal fixtures.'
 } finally {
     & $adb -s $Device shell pm revoke com.pctelemetry.dashboard android.permission.RECORD_AUDIO
     & $adb -s $Device shell dumpsys package com.pctelemetry.dashboard | Select-String 'RECORD_AUDIO' |
-        ForEach-Object { $_.Line } | Set-Content "$root/docs/microphone-final-permission.txt" -Encoding utf8
+        ForEach-Object { $_.Line } | Set-Content "$root/docs/$Prefix-final-permission.txt" -Encoding utf8
 }
