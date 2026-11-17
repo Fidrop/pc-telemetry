@@ -1,0 +1,3 @@
+Preview9 to Preview11 signing certificate unchanged.
+Signer #1 certificate SHA-256 digest: b0153d6b8fa6fa91b23020e9035e426aaf6693910de073a02aeec38a2846dd45
+APK signature verification passed.

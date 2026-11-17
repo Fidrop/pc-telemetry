@@ -1,4 +1,5 @@
-param([string]$Destination = 'artifacts/notices')
+param([string]$Destination = 'artifacts/notices',
+    [ValidateSet('Debug', 'Release')][string]$AndroidConfiguration = 'Debug')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $destinationPath = Join-Path $root $Destination
@@ -24,13 +25,14 @@ foreach ($entry in $assets.libraries.PSObject.Properties | Sort-Object Name) {
 }
 $rows | Set-Content "$destinationPath/Windows-dependencies.txt" -Encoding utf8
 $gradleRoot = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { "$root/.tools/gradle-home" }
-$rows = @('Android Debug runtime dependencies from the locked debugRuntimeClasspath.',
+$runtimeClasspath = $AndroidConfiguration.ToLowerInvariant() + 'RuntimeClasspath'
+$rows = @("Android $AndroidConfiguration runtime dependencies from the locked $runtimeClasspath.",
     'AndroidX, Kotlin, kotlinx, OkHttp and Okio are distributed under their individual licenses; see below.', '')
 $locks = @(Get-Content "$root/android/app/gradle.lockfile"; Get-Content "$root/android/telemetry-core/gradle.lockfile")
 foreach ($line in $locks | Sort-Object -Unique) {
     if ($line -notmatch '^([^:#]+):([^:]+):([^=]+)=(.*)$') { continue }
     $group, $artifact, $version, $scopes = $Matches[1], $Matches[2], $Matches[3], $Matches[4]
-    if (($scopes -split ',') -notcontains 'debugRuntimeClasspath' -and ($scopes -split ',') -notcontains 'runtimeClasspath') { continue }
+    if (($scopes -split ',') -notcontains $runtimeClasspath -and ($scopes -split ',') -notcontains 'runtimeClasspath') { continue }
     $pomDirectory = "$gradleRoot/caches/modules-2/files-2.1/$group/$artifact/$version"
     $pom = Get-ChildItem -LiteralPath $pomDirectory -Recurse -Filter '*.pom' | Select-Object -First 1
     if (!$pom) { throw "Missing Android POM: ${group}:${artifact}:$version" }

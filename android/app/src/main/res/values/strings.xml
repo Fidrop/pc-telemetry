@@ -67,4 +67,8 @@
     <string name="no_paired_devices">尚未保存电脑</string>
     <string name="paired_devices">连接已配对设备</string>
     <string name="connect_new_device">连接新设备</string>
+    <string name="settings_audio_tab">声音</string>
+    <string name="settings_devices_tab">设备</string>
+    <string name="settings_device_hint">设备与连接请在“设备”页管理</string>
+    <string name="settings_display_tab">显示</string>
 </resources>

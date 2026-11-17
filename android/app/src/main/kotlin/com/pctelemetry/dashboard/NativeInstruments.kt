@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -25,18 +26,19 @@ import kotlin.math.*
 
 enum class DashboardTheme { SPORT, HUD }
 data class InstrumentValues(val cpu: Float?, val gpu: Float?, val cpuTemp: Float?, val gpuTemp: Float?,
-    val ram: MemoryMetric?, val vram: MemoryMetric?)
+    val ram: MemoryMetric?, val vram: MemoryMetric?, val cpuPointer: Float? = cpu, val gpuPointer: Float? = gpu)
 
 @Composable
 fun animatedValues(state: DashboardState): InstrumentValues {
     val data = state.snapshot?.metrics
     @Composable fun smooth(value: Double?): Float? {
         val animated by animateFloatAsState((value ?: 0.0).toFloat(),
-            tween(500, easing = FastOutSlowInEasing), label = "reading")
-        return value?.let { round(animated * 10) / 10 }
+            tween(320, easing = FastOutSlowInEasing), label = "needle")
+        return value?.let { animated }
     }
-    return InstrumentValues(smooth(data?.cpuUsage?.value), smooth(data?.gpuUsage?.value),
-        smooth(data?.cpuTemperature?.value), smooth(data?.gpuTemperature?.value), data?.ram, data?.vram)
+    return InstrumentValues(data?.cpuUsage?.value?.toFloat(), data?.gpuUsage?.value?.toFloat(),
+        data?.cpuTemperature?.value?.toFloat(), data?.gpuTemperature?.value?.toFloat(), data?.ram, data?.vram,
+        smooth(data?.cpuUsage?.value), smooth(data?.gpuUsage?.value))
 }
 
 internal val White = Color(0xFFE6EBED)
@@ -71,13 +73,29 @@ private fun polar(center: Offset, radius: Float, degrees: Float): Offset {
 private fun number(value: Float?, unit: String = "%") =
     value?.let { String.format(Locale.getDefault(), "%.1f%s", it, unit) } ?: "N/A"
 
+private fun DrawScope.reading(paint: Paint, value: Float?, centerX: Float, baseline: Float,
+    fontSize: Float, color: Color = White, unit: String = "%") {
+    if (value == null) { label(paint, "N/A", centerX, baseline, fontSize, color, true); return }
+    val digits = number(value, "")
+    paint.textSize = fontSize
+    val digitWidth = paint.measureText(digits)
+    paint.textSize = fontSize * 0.56f
+    val unitWidth = paint.measureText(unit)
+    val left = centerX - (digitWidth + unitWidth + 5f) / 2
+    label(paint, digits, left, baseline, fontSize, color)
+    label(paint, unit, left + digitWidth + 5f, baseline - 2f, fontSize * 0.56f, color)
+}
+
 @Composable
 fun SportDashboard(values: InstrumentValues, state: DashboardState, status: String, age: String,
     selfTest: Float?, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true,
     phone: PhoneStatus = PhoneStatus(), onEngineStop: () -> Unit = {}, selfTestRecovery: Float = 0f) {
-    val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC) } }
+    val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC); fontFeatureSettings = "tnum"
+    } }
+    val detailPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("sans-serif", Typeface.NORMAL) } }
     Box(modifier) {
-        SportBackground(paint, rogBranding)
+        SportBackground(paint, detailPaint, rogBranding)
         Canvas(Modifier.fillMaxSize()) { design {
             fun sweep(live: Float?): Float? {
                 if (selfTest == null) return live
@@ -87,36 +105,50 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             }
             val cpu = sweep(values.cpu)
             val gpu = sweep(values.gpu)
-            pointer(Offset(470f, 410f), cpu)
-            pointer(Offset(1304f, 410f), gpu)
-            label(paint, number(cpu), 470f, 520f, 80f, center = true)
-            label(paint, number(gpu), 1304f, 520f, 80f, center = true)
+            pointer(Offset(470f, 410f), sweep(values.cpuPointer))
+            pointer(Offset(1304f, 410f), sweep(values.gpuPointer))
+            reading(paint, cpu, 470f, 520f, 80f)
+            reading(paint, gpu, 1304f, 520f, 80f)
             if (selfTest == null && state.snapshot?.metrics?.cpuUsage?.status == "stale")
                 label(paint, staleLabel, 470f, 556f, 23f, Orange, true)
             if (selfTest == null && state.snapshot?.metrics?.gpuUsage?.status == "stale")
                 label(paint, staleLabel, 1304f, 556f, 23f, Orange, true)
             val cpuTemp = number(sweep(values.cpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.cpuTemperature?.status, staleLabel) else ""
             val gpuTemp = number(sweep(values.gpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel) else ""
-            label(paint, cpuTemp, 470f, 605f, 43f, center = true)
-            label(paint, gpuTemp, 1304f, 605f, 43f, center = true)
-            label(paint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 17f,
+            if (selfTest == null && state.snapshot?.metrics?.cpuTemperature?.status == "stale")
+                label(paint, cpuTemp, 470f, 605f, 43f, center = true)
+            else reading(paint, sweep(values.cpuTemp), 470f, 605f, 43f, unit = "°C")
+            if (selfTest == null && state.snapshot?.metrics?.gpuTemperature?.status == "stale")
+                label(paint, gpuTemp, 1304f, 605f, 43f, center = true)
+            else reading(paint, sweep(values.gpuTemp), 1304f, 605f, 43f, unit = "°C")
+            label(detailPaint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 16f,
                 if (selfTest != null) Orange else if (state.isOffline) Red else Silver)
             label(paint, "ENGINE STOP", 887f, 535f, 27f, White, true, 190f)
-            label(paint, "TAP TO SWITCH OFF", 887f, 568f, 14f, Silver, true, 190f)
-            memory(paint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel,
+            label(detailPaint, "TAP TO SWITCH OFF", 887f, 568f, 13f, Silver, true, 190f)
+            memory(paint, detailPaint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel,
                 if (selfTest != null) sweep(values.ram?.percent?.toFloat()) else null)
-            memory(paint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel,
+            memory(paint, detailPaint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel,
                 if (selfTest != null) sweep(values.vram?.percent?.toFloat()) else null)
         } }
-        PhoneStatusLayer(paint, phone, sport = true)
+        PhoneStatusLayer(detailPaint, phone, sport = true)
         SportEngineStop(onEngineStop)
     }
 }
 private fun DrawScope.gaugeBackground(paint: Paint, center: Offset, radius: Float) {
-    drawCircle(Color(0xFF33383C), radius + 15, center)
-    drawCircle(Color(0xFFAAB2B6), radius + 10, center, style = Stroke(3f))
-    drawCircle(Color(0xFF080A0C), radius, center)
-    drawCircle(Silver, radius - 7, center, style = Stroke(2f))
+    drawCircle(Color.Black.copy(alpha = 0.6f), radius + 21, center + Offset(0f, 7f))
+    val steel = Brush.linearGradient(0f to Color(0xFF131A1E), 0.18f to Color(0xFF616C73),
+        0.26f to Color(0xFFE5ECEF), 0.34f to Color(0xFF59656C), 0.52f to Color(0xFF161E23),
+        0.76f to Color(0xFF7B868B), 0.88f to Color(0xFFB5C0C6), 1f to Color(0xFF1C262B),
+        start = center - Offset(radius, radius), end = center + Offset(radius, radius))
+    drawCircle(steel, radius + 15, center)
+    drawCircle(Color(0xFF171F24), radius + 8, center, style = Stroke(1.5f))
+    drawCircle(Color(0xFF030608), radius + 2, center)
+    drawCircle(Brush.radialGradient(listOf(Color(0xFF151D21), Color(0xFF05080A)),
+        center - Offset(90f, 110f), radius * 1.6f), radius, center)
+    drawCircle(Color(0xFF6E7B82), radius - 6, center, style = Stroke(1.1f))
+    drawCircle(Color(0xFF1A2328), radius - 11, center, style = Stroke(1f))
+    drawArc(Color.White.copy(alpha = 0.65f), 204f, 92f, false,
+        center - Offset(radius + 12, radius + 12), Size((radius + 12) * 2, (radius + 12) * 2), style = Stroke(1.2f))
     drawArc(Red.copy(alpha = 0.65f), 351f, 54f, false,
         Offset(center.x - radius + 20, center.y - radius + 20),
         Size((radius - 20) * 2, (radius - 20) * 2), style = Stroke(13f))
@@ -131,16 +163,30 @@ private fun DrawScope.gaugeBackground(paint: Paint, center: Offset, radius: Floa
             label(paint, tick.toString(), position.x, position.y + 11, 32f, center = true)
         }
     }
+    val glass = Path().apply { addOval(Rect(center - Offset(radius - 13, radius - 13), Size((radius - 13) * 2, (radius - 13) * 2))) }
+    clipPath(glass) {
+        drawRect(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.025f), Color.Transparent,
+            Color.Transparent), center - Offset(radius, radius), center + Offset(radius, radius)),
+            center - Offset(radius, radius), Size(radius * 2, radius * 2))
+    }
 }
 private fun DrawScope.pointer(center: Offset, value: Float?) {
     if (value == null) return
     val angle = 135f + 2.7f * value.coerceIn(0f, 100f)
-    drawLine(Red, polar(center, 26f, angle + 180), polar(center, 252f, angle), 7f)
+    val side = polar(Offset.Zero, 4.5f, angle + 90f)
+    val tail = polar(center, 29f, angle + 180f)
+    val needle = Path().apply { moveTo(tail.x + side.x, tail.y + side.y)
+        val tip = polar(center, 253f, angle); lineTo(tip.x, tip.y)
+        lineTo(tail.x - side.x, tail.y - side.y); close() }
+    withTransform({ translate(3f, 4f) }) { drawPath(needle, Color.Black.copy(alpha = 0.55f)) }
+    drawPath(needle, Red)
     drawLine(White, polar(center, 30f, angle), polar(center, 247f, angle), 1.5f)
-    drawCircle(Color(0xFF33383E), 22f, center)
-    drawCircle(Silver, 22f, center, style = Stroke(2f))
+    drawCircle(Color(0xFF020506), 24f, center)
+    drawCircle(Brush.linearGradient(listOf(Color(0xFFECF1F3), Color(0xFF4B565C), Color(0xFFC0CDD2), Color(0xFF263238)),
+        center - Offset(17f, 20f), center + Offset(21f, 18f)), 21f, center)
+    drawCircle(Color.White.copy(alpha = 0.45f), 20f, center, style = Stroke(0.7f))
 }
-private fun DrawScope.memory(paint: Paint, name: String, metric: MemoryMetric?,
+private fun DrawScope.memory(paint: Paint, detailPaint: Paint, name: String, metric: MemoryMetric?,
     x: Float, y: Float, width: Float, color: Color, staleLabel: String, testPercent: Float? = null) {
     label(paint, name, x, y, 31f, color)
     val percent = testPercent?.toDouble() ?: metric?.percent
@@ -150,7 +196,7 @@ private fun DrawScope.memory(paint: Paint, name: String, metric: MemoryMetric?,
         String.format(Locale.getDefault(), "%.1f / %.1f GiB", used / 1073741824.0,
             metric.totalBytes!! / 1073741824.0)
     } ?: "N/A"
-    label(paint, capacity + if (testPercent == null) staleSuffix(metric?.status, staleLabel) else "", x + 395, y, 25f, color)
+    label(detailPaint, capacity + if (testPercent == null) staleSuffix(metric?.status, staleLabel) else "", x + 395, y, 22f, color)
     for (index in 0..19) {
         drawRect(if (percent != null && percent >= (index + 1) * 5) color else Color(0xFF2B3338),
             Offset(x + index * width / 20, y + 25), Size(width / 20 - 4, 17f))
@@ -164,11 +210,15 @@ fun HudDashboard(values: InstrumentValues, state: DashboardState, status: String
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("monospace", Typeface.BOLD) } }
     val cpuPath = remember { Path() }
     val gpuPath = remember { Path() }
+    val cpuFill = remember { Path() }
+    val gpuFill = remember { Path() }
+    val cpuTint = remember { Brush.verticalGradient(listOf(Cyan.copy(alpha = 0.12f), Color.Transparent), 250f, 540f) }
+    val gpuTint = remember { Brush.verticalGradient(listOf(Orange.copy(alpha = 0.1f), Color.Transparent), 250f, 540f) }
     Box(modifier) {
         HudScene(paint, rogBranding)
         Canvas(Modifier.fillMaxSize()) { design {
-            label(paint, number(values.cpu), 92f, 300f, 68f, Cyan)
-            label(paint, number(values.gpu), 92f, 540f, 68f, Orange)
+            reading(paint, values.cpu, 226f, 300f, 68f, Cyan)
+            reading(paint, values.gpu, 226f, 540f, 68f, Orange)
             if (state.snapshot?.metrics?.cpuUsage?.status == "stale")
                 label(paint, staleLabel, 270f, 215f, 22f, Orange)
             if (state.snapshot?.metrics?.gpuUsage?.status == "stale")
@@ -185,8 +235,11 @@ fun HudDashboard(values: InstrumentValues, state: DashboardState, status: String
             compactMemory(paint, values.vram, 1425f, 556f, staleLabel)
             hudMemoryBar(values.ram?.percent?.toFloat(), Offset(1425f, 465f), Cyan)
             hudMemoryBar(values.vram?.percent?.toFloat(), Offset(1425f, 575f), Cyan)
-            curve(cpuPath, state, nowMillis(), true, Cyan)
-            curve(gpuPath, state, nowMillis(), false, Orange)
+            val chartNow = nowMillis()
+            val cpuEnd = curve(cpuPath, cpuFill, cpuTint, state, chartNow, true, Cyan)
+            val gpuEnd = curve(gpuPath, gpuFill, gpuTint, state, chartNow, false, Orange)
+            cpuEnd?.let { chartBadge(paint, it, Cyan, -32f) }
+            gpuEnd?.let { chartBadge(paint, it, Orange, 8f) }
             drawCircle(if (state.isOffline) Orange else Cyan, 6f, Offset(345f, 695f))
             label(paint, if (state.demo) "DEMO" else status, 370f, 705f, 27f,
                 if (state.isOffline) Orange else Cyan, maxWidth = 260f)
@@ -222,31 +275,55 @@ private fun DrawScope.compactMemory(paint: Paint, metric: MemoryMetric?, x: Floa
     if (metric?.status == "stale") label(paint, staleLabel, x, y + 25, 18f, Orange)
 }
 private fun staleSuffix(status: String?, label: String) = if (status == "stale") " · $label" else ""
-private fun DrawScope.curve(path: Path, state: DashboardState, now: Long, cpu: Boolean, color: Color) {
-    path.reset()
+private data class ChartEnd(val x: Float, val y: Float, val value: Float)
+private fun DrawScope.curve(path: Path, fill: Path, tint: Brush, state: DashboardState, now: Long,
+    cpu: Boolean, color: Color): ChartEnd? {
+    path.reset(); fill.reset()
     var previous: Long? = null
+    var firstX: Float? = null
+    var end: ChartEnd? = null
+    fun closeSegment() {
+        if (firstX != null && end != null) {
+            fill.lineTo(end!!.x, 540f); fill.lineTo(firstX!!, 540f); fill.close()
+        }
+        firstX = null
+    }
     for (point in state.history) {
         val value = if (cpu) point.cpu else point.gpu
         val age = now - point.receivedMillis
-        if (value == null || age !in 0..60_000) { previous = null; continue }
+        if (value == null || age !in 0..60_000) { closeSegment(); previous = null; continue }
         val x = 1300f - age / 60_000f * 750f
         val y = 540f - value.toFloat() / 100f * 290f
-        if (previous == null || point.receivedMillis - previous > 2500) path.moveTo(x, y) else path.lineTo(x, y)
+        if (previous == null || point.receivedMillis - previous > 2500) {
+            closeSegment(); path.moveTo(x, y); fill.moveTo(x, y); firstX = x
+        } else { path.lineTo(x, y); fill.lineTo(x, y) }
         previous = point.receivedMillis
+        end = ChartEnd(x, y, value.toFloat())
     }
-    drawPath(path, color.copy(alpha = 0.08f), style = Stroke(13f))
-    drawPath(path, color.copy(alpha = 0.18f), style = Stroke(7f))
-    drawPath(path, color, style = Stroke(2.5f))
+    closeSegment()
+    drawPath(fill, tint)
+    drawPath(path, color.copy(alpha = 0.1f), style = Stroke(6f))
+    drawPath(path, color, style = Stroke(2.2f))
+    end?.let { drawCircle(Color(0xFF041018), 4.5f, Offset(it.x, it.y)); drawCircle(color, 3f, Offset(it.x, it.y)) }
+    return end
+}
+
+private fun DrawScope.chartBadge(paint: Paint, end: ChartEnd, color: Color, offsetY: Float) {
+    val origin = Offset((end.x + 10f).coerceAtMost(1276f), (end.y + offsetY).coerceIn(224f, 510f))
+    drawRoundRect(Color(0xF507131B), origin, Size(74f, 28f), androidx.compose.ui.geometry.CornerRadius(3f))
+    drawRoundRect(color.copy(alpha = 0.7f), origin, Size(74f, 28f), androidx.compose.ui.geometry.CornerRadius(3f), style = Stroke(1f))
+    label(paint, number(end.value), origin.x + 37f, origin.y + 20f, 17f, color, true, 66f)
 }
 
 @Composable
-private fun SportBackground(paint: Paint, rogBranding: Boolean) {
+private fun SportBackground(paint: Paint, detailPaint: Paint, rogBranding: Boolean) {
     val emblem = painterResource(if (rogBranding) R.drawable.brand_rog else R.drawable.brand_telemetry)
     Canvas(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) { design {
         drawRect(Color(0xFF070809), size = Size(WIDTH, HEIGHT))
-        for (index in -40..90) {
-            val x = index * 28f
-            drawLine(Color(0xFF121416), Offset(x, HEIGHT), Offset(x + 700, 0f), 3f)
+        for (index in -90..180) {
+            val x = index * 12f
+            drawLine(Color(0xFF0F1214), Offset(x, HEIGHT), Offset(x + 700, 0f), 0.75f)
+            drawLine(Color(0xFF0C0F11), Offset(x, 0f), Offset(x + 700, HEIGHT), 0.75f)
         }
         drawLine(Red, Offset(78f, 32f), Offset(78f, 66f), 4f)
         label(paint, "PC TELEMETRY", 95f, 63f, 36f)
@@ -255,7 +332,7 @@ private fun SportBackground(paint: Paint, rogBranding: Boolean) {
         label(paint, "CPU", 470f, 310f, 46f, center = true)
         label(paint, "GPU", 1304f, 310f, 46f, center = true)
         drawEmblem(emblem, Offset(790f, 205f), 194f, Red)
-        label(paint, if (rogBranding) "REPUBLIC OF GAMERS" else "PC TELEMETRY", 887f, 400f, 18f, Silver, true)
+        label(detailPaint, if (rogBranding) "REPUBLIC OF GAMERS" else "PC TELEMETRY", 887f, 400f, 16f, Silver, true)
         drawLine(Red.copy(alpha = 0.5f), Offset(70f, 838f), Offset(1704f, 838f), 3f)
         drawLine(Silver.copy(alpha = 0.4f), Offset(887f, 735f), Offset(887f, 815f), 1f)
     } }

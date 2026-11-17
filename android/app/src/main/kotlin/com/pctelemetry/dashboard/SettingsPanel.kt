@@ -1,8 +1,5 @@
 package com.pctelemetry.dashboard
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,155 +8,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pctelemetry.core.PairingClient
-import com.pctelemetry.core.ConnectionPhase
 import kotlinx.coroutines.launch
-
-@Composable
-fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () -> Unit, onPair: () -> Unit,
-    onMicrophoneChange: (Boolean) -> Unit, onMicrophoneSensitivityPreview: (Int?) -> Unit) {
-    val state by model.state.collectAsStateWithLifecycle()
-    val profiles by model.profiles.collectAsStateWithLifecycle()
-    val selected by model.profile.collectAsStateWithLifecycle()
-    val wanted by model.connectionWanted.collectAsStateWithLifecycle()
-    val pixelShiftDescription = stringResource(R.string.pixel_shift)
-    var microphoneSensitivity by remember(value.microphoneSensitivity) { mutableFloatStateOf(value.microphoneSensitivity.toFloat()) }
-    val previewCallback by rememberUpdatedState(onMicrophoneSensitivityPreview)
-    DisposableEffect(Unit) { onDispose { previewCallback(null) } }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Row(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f))) {
-            Spacer(Modifier.weight(1f).fillMaxHeight().clickable(onClick = onDismiss))
-            Surface(color = Color(0xFF101C27), contentColor = White,
-                modifier = Modifier.fillMaxHeight().widthIn(max = 420.dp).width(380.dp)) {
-                Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
-                        TextButton(onClick = onDismiss, modifier = Modifier.testTag("settings-close")) {
-                            Text(stringResource(R.string.close))
-                        }
-                    }
-                    Text(stringResource(R.string.paired_devices), style = MaterialTheme.typography.titleMedium)
-                    if (profiles.isEmpty()) Text(stringResource(R.string.no_paired_devices), color = Silver)
-                    profiles.forEach { device ->
-                        val active = wanted && !state.demo && selected?.deviceId == device.deviceId
-                        val connected = active && state.phase == ConnectionPhase.CONNECTED
-                        val toggle = if (!active) ToggleableState.Off else if (connected) ToggleableState.On else ToggleableState.Indeterminate
-                        Row(Modifier.fillMaxWidth().testTag("device-${device.deviceId}")
-                            .triStateToggleable(toggle, role = Role.Checkbox,
-                                onClick = { if (active) model.disconnect() else model.reconnect(device.deviceId) })
-                            .padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            TriStateCheckbox(toggle, onClick = null, colors = CheckboxDefaults.colors(
-                                checkedColor = Cyan, uncheckedColor = Silver, checkmarkColor = Color(0xFF05252A)))
-                            Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                                Text(device.displayName ?: java.net.URI(device.endpoint).host, color = White)
-                                Text(java.net.URI(device.endpoint).let { "${it.host}:${if (it.port == -1) 443 else it.port}" },
-                                    color = Silver, style = MaterialTheme.typography.bodySmall)
-                                Text(stringResource(if (connected) R.string.device_connected else if (active) {
-                                    when (state.message) {
-                                        "authentication" -> R.string.device_auth_failed
-                                        "certificate" -> R.string.device_certificate_failed
-                                        else -> R.string.device_connecting
-                                    }
-                                } else R.string.device_disconnected), color = if (connected) Cyan else Silver,
-                                    style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                    TextButton(onClick = { onDismiss(); onPair() }, modifier = Modifier.testTag("connect-new-device")) {
-                        Text("＋ " + stringResource(R.string.connect_new_device))
-                    }
-                    HorizontalDivider(color = Silver.copy(alpha = 0.2f))
-                    Text(stringResource(R.string.theme))
-                    Choices(listOf("SPORT", "HUD"), value.theme.ordinal) {
-                        val theme = DashboardTheme.entries[it]
-                        model.changeSettings { previous -> previous.copy(theme = theme) }
-                    }
-                    Text(stringResource(R.string.language))
-                    Choices(listOf(stringResource(R.string.system), "简体中文", "English"),
-                        listOf("system", "zh", "en").indexOf(value.language)) {
-                        val language = listOf("system", "zh", "en")[it]
-                        model.changeSettings { previous -> previous.copy(language = language) }
-                    }
-                    Text(stringResource(R.string.brand_style))
-                    Choices(listOf("ROG", "TELEMETRY"), if (value.rogBranding) 0 else 1) { index ->
-                        model.changeSettings { it.copy(rogBranding = index == 0) }
-                    }
-                    Text(stringResource(R.string.night))
-                    Choices(listOf(stringResource(R.string.system), stringResource(R.string.night_on),
-                        stringResource(R.string.night_off)), listOf("system", "on", "off").indexOf(value.night)) {
-                        val night = listOf("system", "on", "off")[it]
-                        model.changeSettings { previous -> previous.copy(night = night) }
-                    }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.pixel_shift), Modifier.weight(1f))
-                        Switch(value.pixelShift, { enabled -> model.changeSettings { it.copy(pixelShift = enabled) } },
-                            modifier = Modifier.semantics { contentDescription = pixelShiftDescription },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF05252A),
-                                checkedTrackColor = Cyan, uncheckedThumbColor = Silver,
-                                uncheckedTrackColor = Color(0xFF273D4A)))
-                    }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.microphone_meter), Modifier.weight(1f))
-                        Switch(value.microphoneMeter, onMicrophoneChange,
-                            modifier = Modifier.testTag("microphone-switch"),
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF30050D),
-                                checkedTrackColor = Red, uncheckedThumbColor = Silver,
-                                uncheckedTrackColor = Color(0xFF273D4A)))
-                    }
-                    Text(stringResource(R.string.microphone_note), style = MaterialTheme.typography.bodySmall,
-                        color = Silver)
-                    Text(stringResource(R.string.microphone_sensitivity, microphoneSensitivity.toInt()))
-                    Slider(value = microphoneSensitivity,
-                        onValueChange = { microphoneSensitivity = it; onMicrophoneSensitivityPreview(it.toInt()) },
-                        onValueChangeFinished = {
-                            val selected = microphoneSensitivity.toInt()
-                            model.changeSettings { it.copy(microphoneSensitivity = selected) }
-                        }, valueRange = 0f..100f, modifier = Modifier.testTag("microphone-sensitivity"),
-                        colors = SliderDefaults.colors(thumbColor = White, activeTrackColor = Red,
-                            inactiveTrackColor = Color(0xFF49333B)))
-                    Text(stringResource(R.string.microphone_sensitivity_hint), style = MaterialTheme.typography.bodySmall,
-                        color = Silver)
-                    Text(stringResource(R.string.gpu_selection))
-                    state.gpus.forEach { gpu ->
-                        Row(Modifier.fillMaxWidth().clickable { model.selectGpu(gpu.id) },
-                            verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(state.snapshot?.gpu?.id == gpu.id, { model.selectGpu(gpu.id) })
-                            Text(gpu.name)
-                        }
-                    }
-                    TextButton(onClick = { model.startDemo(); onDismiss() }) { Text(stringResource(R.string.demo)) }
-                    if (state.demo) TextButton(onClick = { model.exitDemo(); onDismiss() }) {
-                        Text(stringResource(R.string.exit_demo))
-                    }
-                }
-            }
-        }
-    }
-}
-@Composable
-private fun Choices(labels: List<String>, selected: Int, change: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        labels.forEachIndexed { index, label ->
-            FilterChip(selected == index, { change(index) }, label = { Text(label) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = Color(0xFF172B39), labelColor = White,
-                    selectedContainerColor = Color(0xFF17464E), selectedLabelColor = Color(0xFF86F8F1)))
-        }
-    }
-}
 
 @Composable
 fun PairingDialog(model: DashboardViewModel, initial: String?, onDismiss: () -> Unit) {

@@ -67,4 +67,8 @@
     <string name="no_paired_devices">No saved PCs</string>
     <string name="paired_devices">Connect paired devices</string>
     <string name="connect_new_device">Connect a new device</string>
+    <string name="settings_audio_tab">Audio</string>
+    <string name="settings_devices_tab">Devices</string>
+    <string name="settings_device_hint">Manage PCs and connections in the Devices tab.</string>
+    <string name="settings_display_tab">Display</string>
 </resources>

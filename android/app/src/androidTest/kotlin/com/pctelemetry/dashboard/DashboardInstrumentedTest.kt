@@ -63,10 +63,11 @@ class DashboardInstrumentedTest {
         }
         rule.onNodeWithText("Enter DEMO").performClick()
         rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithTag("settings-tab-display").performClick()
         rule.onNodeWithText("HUD").performScrollTo().performClick()
         rule.onNodeWithText("TELEMETRY").performScrollTo().performClick()
         if (InstrumentationRegistry.getArguments().getString("visualCapture") == "true") {
-            rule.onNodeWithTag("settings-close").performScrollTo()
+            rule.onNodeWithTag("settings-close").assertIsDisplayed()
             saveDialog("settings-en.png")
         }
         rule.onNodeWithText("简体中文").performScrollTo().performClick()
@@ -82,10 +83,38 @@ class DashboardInstrumentedTest {
         val restored = withTimeout(5000) { UiSettingsStore(context).settings.first { it == expected } }
         assertEquals(expected, restored)
         if (InstrumentationRegistry.getArguments().getString("visualCapture") == "true") {
-            rule.onNodeWithTag("settings-close").performScrollTo()
+            rule.onNodeWithTag("settings-close").assertIsDisplayed()
             saveDialog("settings-zh.png")
         }
-        rule.onNodeWithTag("settings-close").performScrollTo().performClick()
+        rule.onNodeWithTag("settings-close").assertIsDisplayed().performClick()
+        rule.onNodeWithContentDescription("HUD dashboard").assertExists()
+    }
+
+    @Test fun compactSettingsTabsFitAndKeepCloseVisible() {
+        rule.runOnUiThread {
+            ViewModelProvider(rule.activity)[DashboardViewModel::class.java]
+                .updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+        }
+        rule.onNodeWithText("Enter DEMO").performClick()
+        rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithTag("settings-tab-devices").assertIsSelected()
+        rule.onNodeWithTag("connect-new-device").assertIsDisplayed()
+        saveDialog("settings-devices.png")
+        rule.onNodeWithTag("settings-tab-display").performClick().assertIsSelected()
+        rule.onNodeWithText("TELEMETRY").assertIsDisplayed()
+        assertTrue("Emblem selector must be fully visible without scrolling",
+            rule.onNodeWithText("TELEMETRY").fetchSemanticsNode().boundsInRoot.height >= 24 * context.resources.displayMetrics.density)
+        rule.onNodeWithText("English").assertIsDisplayed()
+        rule.onNodeWithContentDescription("OLED pixel shift").assertIsDisplayed()
+        rule.onNodeWithTag("settings-close").assertIsDisplayed()
+        saveDialog("settings-display-sport.png")
+        rule.onNodeWithText("HUD").performClick()
+        saveDialog("settings-display-hud.png")
+        rule.onNodeWithTag("settings-tab-audio").performClick().assertIsSelected()
+        rule.onNodeWithTag("microphone-switch").assertIsDisplayed().assertIsOff()
+        rule.onNodeWithTag("microphone-sensitivity").assertIsDisplayed()
+        saveDialog("settings-audio.png")
+        rule.onNodeWithTag("settings-close").assertIsDisplayed().performClick()
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
     }
 

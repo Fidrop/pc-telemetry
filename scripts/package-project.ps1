@@ -8,7 +8,7 @@ $archivePath = Join-Path $artifactRoot ("PC-Telemetry-$Stage-" + (Get-Date -Form
 $files = @(Get-ChildItem -LiteralPath $projectRoot -File -Recurse -Force | Where-Object {
     $relative = $_.FullName.Substring($projectRoot.Length + 1).Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
     $relative -notmatch '(^|/)(artifacts|runtime|\.tools|\.git|\.gradle|\.idea|\.vs|bin|obj|build)(/|$)' -and
-        $relative -ne 'android/local.properties' -and $_.Extension -notin @('.pfx','.key','.user')
+        $relative -ne 'android/local.properties' -and $_.Extension -notin @('.pfx','.key','.keystore','.jks','.user')
 })
 $archive = [System.IO.Compression.ZipFile]::Open($archivePath, [System.IO.Compression.ZipArchiveMode]::Create)
 try {

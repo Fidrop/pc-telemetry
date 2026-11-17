@@ -1,5 +1,5 @@
-# PC Telemetry v1.0
-Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主要配对/设置代码，并完成Android10模拟器真实联调。已交付阶段6预览构建，当前进度见[工作状态](docs/work-status.md)。
+# PC Telemetry v1.0.0
+Windows Collector + Android Dashboard，提供SPORT/HUD仪表、设备配对与勾选重连、时钟电量、引擎交互和可选拾音。下载见[GitHub Release](https://github.com/Fidrop/pc-telemetry/releases/latest)，验证见[1.0.0发布记录](docs/release-1.0.0.md)，实机与性能限制见[已知问题](docs/known-issues.md)。
 
 项目公开仓库 https://github.com/Fidrop/pc-telemetry ，可匿名访问及克隆main分支，接续说明见docs/handoff.md。
 
@@ -21,6 +21,7 @@ Windows Collector + Android Dashboard。已实现Android接收、SPORT/HUD及主
 - [Windows驱动安全与管理员启动修复](docs/windows-security-report.md)
 - [已配对设备勾选连接与电脑名称](docs/paired-devices-report.md)
 - [PC首次温度驱动安装引导](docs/driver-setup-report.md)
+- [SPORT/HUD及分页设置优化与截图](docs/ui-polish-report.md)
 - [依赖与工程方案](docs/architecture.md)
 - [协议草案](protocol/README.md)
 - [安全方案](docs/security.md)
@@ -45,3 +46,5 @@ Windows x64，安装.NET8 SDK（global.json约束8.0.4xx功能带）后，在Pow
 源码压缩包不包含SDK、凭据和构建输出。预览交付包包含自包含便携EXE与Debug APK，生成方法见阶段6报告。
 
 预览构建：scripts/publish-windows.ps1、scripts/build-android.ps1；运行scripts/package-deliverables.ps1生成带许可与校验的交付ZIP。工作集与模拟器帧耗时未达最终目标，请阅读已知问题。
+
+正式版构建：`scripts/build-android.ps1 -Configuration Release`；正式交付：`scripts/package-deliverables.ps1 -WindowsDirectory artifacts/PC-Telemetry-Windows-1.0.0 -AndroidConfiguration Release`。详细复现及签名说明见[1.0.0发布记录](docs/release-1.0.0.md)。

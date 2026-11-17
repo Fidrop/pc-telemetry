@@ -49,6 +49,7 @@ class MicrophoneInstrumentedTest {
         val model = beginDemo()
         rule.onNodeWithTag("sport-microphone-meter").assertDoesNotExist()
         rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithTag("settings-tab-audio").performClick()
         val needsPermission = context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) !=
             android.content.pm.PackageManager.PERMISSION_GRANTED
         rule.onNodeWithTag("microphone-switch").performScrollTo().assertIsOff().performClick()
@@ -57,7 +58,7 @@ class MicrophoneInstrumentedTest {
             runCatching { model.settings.value.microphoneMeter &&
                 rule.onAllNodesWithTag("settings-close").fetchSemanticsNodes().isNotEmpty() }.getOrDefault(false)
         }
-        rule.onNodeWithTag("settings-close").performScrollTo().performClick()
+        rule.onNodeWithTag("settings-close").assertIsDisplayed().performClick()
         rule.waitUntil(5000) {
             rule.onAllNodesWithTag("sport-microphone-meter").fetchSemanticsNodes().firstOrNull()
                 ?.config?.get(SemanticsProperties.StateDescription) == "Microphone active" &&
@@ -66,6 +67,7 @@ class MicrophoneInstrumentedTest {
         val sessions = audio.activeRecordingConfigurations.map { it.clientAudioSessionId }.toSet()
         println("MIC CHECK active recording session established")
         rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithTag("settings-tab-audio").performClick()
         rule.onNodeWithTag("microphone-sensitivity").performScrollTo()
             .performTouchInput { click(androidx.compose.ui.geometry.Offset(width * 0.2f, centerY)) }
         val sensitivity = rule.onNodeWithTag("microphone-sensitivity").fetchSemanticsNode()
@@ -84,7 +86,7 @@ class MicrophoneInstrumentedTest {
             rule.onNode(isDialog()).captureToImage().asAndroidBitmap()
                 .compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
-        rule.onNodeWithTag("settings-close").performScrollTo().performClick()
+        rule.onNodeWithTag("settings-close").assertIsDisplayed().performClick()
         save("sport-microphone.png")
 
         rule.onNodeWithContentDescription("SPORT dashboard").performTouchInput { swipeLeft() }
@@ -101,10 +103,11 @@ class MicrophoneInstrumentedTest {
         rule.waitUntil(5000) { audio.activeRecordingConfigurations.isNotEmpty() }
         println("MIC CHECK background released and foreground resumed microphone")
         rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithTag("settings-tab-audio").performClick()
         rule.onNodeWithTag("microphone-switch").performScrollTo().assertIsOn().performClick()
         rule.waitUntil(5000) { audio.activeRecordingConfigurations.isEmpty() }
         rule.onNodeWithTag("microphone-switch").assertIsOff()
-        rule.onNodeWithTag("settings-close").performScrollTo().performClick()
+        rule.onNodeWithTag("settings-close").assertIsDisplayed().performClick()
         rule.onNodeWithTag("sport-microphone-meter").assertDoesNotExist()
         println("MIC CHECK switch off: stored=" + UiSettingsStore(context).settings.first().microphoneMeter)
         assertFalse(withTimeout(5000) { UiSettingsStore(context).settings.first { !it.microphoneMeter } }.microphoneMeter)
@@ -122,6 +125,7 @@ class MicrophoneInstrumentedTest {
     @Test fun permissionDeniedDoesNotEnableCapture() {
         val model = beginDemo()
         rule.onNodeWithContentDescription("Settings").performClick()
+        rule.onNodeWithTag("settings-tab-audio").performClick()
         rule.onNodeWithTag("microphone-switch").performScrollTo().performClick()
         respondToPermission(allow = false)
         rule.waitUntil(5000) {

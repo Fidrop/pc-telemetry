@@ -1,0 +1,3 @@
+package: name='com.pctelemetry.dashboard' versionCode='12' versionName='1.0.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+Release APK is not debuggable.
+Signing certificate unchanged; APK upgrade supported.
