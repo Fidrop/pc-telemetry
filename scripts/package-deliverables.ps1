@@ -43,6 +43,18 @@ if (Test-Path "$root/docs/microphone-report.md") {
 foreach ($report in @('windows-security-report.md', 'paired-devices-report.md', 'driver-setup-report.md', 'ui-polish-report.md')) {
     if (Test-Path "$root/docs/$report") { Copy-Item "$root/docs/$report" "$folder/$report" }
 }
+if (Test-Path "$root/docs/ui-polish-report.md") {
+    New-Item -ItemType Directory -Force "$folder/qa", "$folder/design_ref" | Out-Null
+    foreach ($name in @('ui-polish', 'ui-polish-microphone')) {
+        Copy-Item "$root/docs/qa/$name" "$folder/qa/$name" -Recurse
+    }
+    Copy-Item "$root/design_ref/ui-polish-approved-20261117.png" "$folder/design_ref/"
+    foreach ($evidence in Get-ChildItem "$root/docs/ui-polish-*" -File | Where-Object { $_.Extension -in '.txt', '.json' }) {
+        Copy-Item -LiteralPath $evidence.FullName -Destination $folder
+    }
+    $reportPath = "$folder/ui-polish-report.md"
+    [IO.File]::WriteAllText($reportPath, [IO.File]::ReadAllText($reportPath).Replace('../design_ref/', 'design_ref/'))
+}
 $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source commit' }
 $sourceBranch = (& git -C $root rev-parse --abbrev-ref HEAD).Trim()
