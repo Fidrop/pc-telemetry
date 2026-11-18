@@ -115,7 +115,8 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             val instruments = if (preset == SportPreset.CLASSIC) paint else presetPaint
             val cpuPosition = preset.cpuPosition
             val gpuPosition = preset.gpuPosition
-            val staleOffset = if (preset == SportPreset.CLASSIC) 36f else 29f
+            val staleOffset = if (preset == SportPreset.CLASSIC) 36f else 24f
+            val staleSize = if (preset == SportPreset.TOURING) 16f else 23f
             if (preset == SportPreset.CLASSIC) {
                 pointer(Offset(470f, 410f), cpuNeedle)
                 pointer(Offset(1304f, 410f), gpuNeedle)
@@ -125,28 +126,55 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             reading(instruments, cpu, cpuPosition.x, cpuPosition.loadY, cpuPosition.loadSize, preset.readingColor)
             reading(instruments, gpu, gpuPosition.x, gpuPosition.loadY, gpuPosition.loadSize, preset.readingColor)
             if (selfTest == null && state.snapshot?.metrics?.cpuUsage?.status == "stale")
-                label(paint, staleLabel, cpuPosition.x, cpuPosition.loadY + staleOffset, 23f, Orange, true)
+                label(paint, staleLabel, cpuPosition.x, cpuPosition.loadY + staleOffset, staleSize, Orange, true)
             if (selfTest == null && state.snapshot?.metrics?.gpuUsage?.status == "stale")
-                label(paint, staleLabel, gpuPosition.x, gpuPosition.loadY + staleOffset, 23f, Orange, true)
-            val cpuTemp = number(sweep(values.cpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.cpuTemperature?.status, staleLabel) else ""
-            val gpuTemp = number(sweep(values.gpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel) else ""
-            if (selfTest == null && state.snapshot?.metrics?.cpuTemperature?.status == "stale")
-                label(instruments, cpuTemp, cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, center = true)
-            else reading(instruments, sweep(values.cpuTemp), cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, preset.readingColor, unit = "°C")
-            if (selfTest == null && state.snapshot?.metrics?.gpuTemperature?.status == "stale")
-                label(instruments, gpuTemp, gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, center = true)
-            else reading(instruments, sweep(values.gpuTemp), gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, preset.readingColor, unit = "°C")
+                label(paint, staleLabel, gpuPosition.x, gpuPosition.loadY + staleOffset, staleSize, Orange, true)
+            val metrics = state.snapshot?.metrics
+            sportTemperature(instruments, sweep(values.cpuTemp), cpuPosition, preset,
+                if (selfTest == null) staleSuffix(metrics?.cpuTemperature?.status, staleLabel) else "")
+            sportTemperature(instruments, sweep(values.gpuTemp), gpuPosition, preset,
+                if (selfTest == null) staleSuffix(metrics?.gpuTemperature?.status, staleLabel) else "")
             label(detailPaint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 16f,
                 if (selfTest != null) Orange else if (state.isOffline) Red else Silver)
-            label(paint, "ENGINE STOP", 887f, 535f, 27f, White, true, 190f)
-            label(detailPaint, "TAP TO SWITCH OFF", 887f, 568f, 13f, Silver, true, 190f)
-            memory(paint, detailPaint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel,
-                if (selfTest != null) sweep(values.ram?.percent?.toFloat()) else null)
-            memory(paint, detailPaint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel,
-                if (selfTest != null) sweep(values.vram?.percent?.toFloat()) else null)
+            val engineSize = if (preset == SportPreset.CLASSIC) 27f else 33f
+            val engineWidth = if (preset == SportPreset.CLASSIC) 190f else 208f
+            label(paint, "ENGINE STOP", 887f, preset.engineTop + 40f, engineSize, White, true, engineWidth)
+            label(detailPaint, "TAP TO SWITCH OFF", 887f, preset.engineTop + 73f, 13f, Silver, true, 190f)
+            val ramTest = selfTest?.let { sweep(values.ram?.percent?.toFloat()) }
+            val vramTest = selfTest?.let { sweep(values.vram?.percent?.toFloat()) }
+            when (preset) {
+                SportPreset.CLASSIC -> {
+                    memory(paint, detailPaint, "RAM", values.ram, 90f, 752f, 690f, White, staleLabel, ramTest)
+                    memory(paint, detailPaint, "VRAM", values.vram, 960f, 752f, 690f, White, staleLabel, vramTest)
+                }
+                SportPreset.APEX -> {
+                    presetMemory(paint, detailPaint, "RAM", values.ram, 152f, 776f, 522f, preset, staleLabel, ramTest)
+                    presetMemory(paint, detailPaint, "VRAM", values.vram, 1100f, 776f, 522f, preset, staleLabel, vramTest)
+                }
+                SportPreset.TOURING -> {
+                    presetMemory(paint, detailPaint, "RAM", values.ram, 304f, 586f, 292f, preset, staleLabel, ramTest)
+                    presetMemory(paint, detailPaint, "VRAM", values.vram, 1159f, 586f, 292f, preset, staleLabel, vramTest)
+                }
+            }
         } }
-        PhoneStatusLayer(detailPaint, phone, sport = true)
-        SportEngineStop(onEngineStop)
+        PhoneStatusLayer(detailPaint, phone, sport = true, clockTop = preset.clockTop)
+        SportEngineStop(preset.engineTop, onEngineStop)
+    }
+}
+
+private fun DrawScope.sportTemperature(paint: Paint, value: Float?, position: SportReadingPosition,
+    preset: SportPreset, suffix: String) {
+    val size = if (preset == SportPreset.APEX) 51f else 43f
+    val maxWidth = when (preset) {
+        SportPreset.CLASSIC -> Float.POSITIVE_INFINITY
+        SportPreset.APEX -> 180f
+        SportPreset.TOURING -> 142f
+    }
+    if (suffix.isEmpty()) {
+        reading(paint, value, position.temperatureX, position.temperatureY, size, preset.readingColor, unit = "°C")
+    } else {
+        label(paint, number(value, "°C") + suffix, position.temperatureX, position.temperatureY, size,
+            center = true, maxWidth = maxWidth)
     }
 }
 private fun DrawScope.gaugeBackground(paint: Paint, center: Offset, radius: Float) {
@@ -207,14 +235,38 @@ private fun DrawScope.memory(paint: Paint, detailPaint: Paint, name: String, met
     val percent = testPercent?.toDouble() ?: metric?.percent
     label(paint, percent?.let { String.format(Locale.getDefault(), "%.1f%%", it) } ?: "N/A",
         x + 150, y, 42f, color)
-    val capacity = if (testPercent != null) "SELF TEST" else metric?.usedBytes?.let { used ->
-        String.format(Locale.getDefault(), "%.1f / %.1f GiB", used / 1073741824.0,
-            metric.totalBytes!! / 1073741824.0)
-    } ?: "N/A"
-    label(detailPaint, capacity + if (testPercent == null) staleSuffix(metric?.status, staleLabel) else "", x + 395, y, 22f, color)
+    label(detailPaint, memoryCapacity(metric, testPercent, staleLabel), x + 395, y, 22f, color)
+    memorySegments(percent, x, y + 25f, width, 17f, 4f, color)
+}
+
+private fun DrawScope.presetMemory(paint: Paint, detailPaint: Paint, name: String, metric: MemoryMetric?,
+    x: Float, y: Float, width: Float, preset: SportPreset, staleLabel: String, testPercent: Float?) {
+    val footer = preset == SportPreset.APEX
+    val color = preset.readingColor
+    val percent = testPercent?.toDouble() ?: metric?.percent
+    label(paint, name, x, y, 29f, color)
+    label(paint, number(percent?.toFloat()), x + 117f, y, 38f, color, maxWidth = 132f)
+    label(detailPaint, memoryCapacity(metric, testPercent, staleLabel),
+        if (footer) x + 278f else x, if (footer) y - 2f else y + 28f, 21f, color,
+        maxWidth = if (footer) width - 278f else width)
+    memorySegments(percent, x, y + if (footer) 18f else 46f, width, 15f, if (footer) 4f else 2.5f, color)
+}
+
+private fun memoryCapacity(metric: MemoryMetric?, testPercent: Float?, staleLabel: String): String {
+    if (testPercent != null) return "SELF TEST"
+    val used = metric?.usedBytes
+    val total = metric?.totalBytes
+    val capacity = if (used != null && total != null) {
+        String.format(Locale.getDefault(), "%.1f / %.1f GiB", used / 1073741824.0, total / 1073741824.0)
+    } else "N/A"
+    return capacity + staleSuffix(metric?.status, staleLabel)
+}
+
+private fun DrawScope.memorySegments(percent: Double?, x: Float, y: Float, width: Float, height: Float,
+    gap: Float, color: Color) {
     for (index in 0..19) {
         drawRect(if (percent != null && percent >= (index + 1) * 5) color else Color(0xFF2B3338),
-            Offset(x + index * width / 20, y + 25), Size(width / 20 - 4, 17f))
+            Offset(x + index * width / 20, y), Size(width / 20 - gap, height))
     }
 }
 

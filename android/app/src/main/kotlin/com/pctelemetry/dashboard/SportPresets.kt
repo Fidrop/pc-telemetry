@@ -26,15 +26,29 @@ internal data class SportReadingPosition(
 internal val SportPreset.cpuPosition: SportReadingPosition
     get() = when (this) {
         SportPreset.CLASSIC -> SportReadingPosition(470f, 520f, 80f, 470f, 605f)
-        SportPreset.APEX -> SportReadingPosition(394f, 572f, 72f, 1578f, 506f)
-        SportPreset.TOURING -> SportReadingPosition(452f, 465f, 94f, 452f, 549f)
+        SportPreset.APEX -> SportReadingPosition(394f, 588f, 85f, 1309f, 588f)
+        SportPreset.TOURING -> SportReadingPosition(450f, 456f, 122f, 522f, 523f)
     }
 
 internal val SportPreset.gpuPosition: SportReadingPosition
     get() = when (this) {
         SportPreset.CLASSIC -> SportReadingPosition(1304f, 520f, 80f, 1304f, 605f)
-        SportPreset.APEX -> SportReadingPosition(887f, 439f, 142f, 1578f, 604f)
-        SportPreset.TOURING -> SportReadingPosition(1322f, 465f, 94f, 1322f, 549f)
+        SportPreset.APEX -> SportReadingPosition(887f, 464f, 153f, 1517f, 588f)
+        SportPreset.TOURING -> SportReadingPosition(1305f, 456f, 91f, 1377f, 523f)
+    }
+
+internal val SportPreset.engineTop: Float
+    get() = when (this) {
+        SportPreset.CLASSIC -> 495f
+        SportPreset.APEX -> 606f
+        SportPreset.TOURING -> 592f
+    }
+
+internal val SportPreset.clockTop: Float
+    get() = when (this) {
+        SportPreset.CLASSIC -> 610f
+        SportPreset.APEX -> 744f
+        SportPreset.TOURING -> 733f
     }
 
 private val StoWhite = Color(0xFFEDF0F2)
@@ -65,10 +79,9 @@ internal fun SportPresetBackdrop(preset: SportPreset, paint: Paint, detail: Pain
             drawLine(accent, Offset(78f, 32f), Offset(78f, 66f), 3f)
             label(paint, "PC TELEMETRY", 95f, 63f, 36f)
             label(paint, "SPORT", 1435f, 63f, 37f, accent)
-            val logoTop = if (apex) 115f else 220f
-            drawEmblem(emblem, Offset(834f, logoTop), 106f, if (rogBranding) Red else accent)
-            drawLine(accent.copy(alpha = .7f), Offset(74f, 838f), Offset(1700f, 838f), 2f)
-            drawLine(Silver.copy(alpha = .36f), Offset(887f, 731f), Offset(887f, 815f))
+            val logoTop = if (apex) 99f else 259f
+            val logoWidth = if (apex) 124f else 140f
+            drawEmblem(emblem, Offset((WIDTH - logoWidth) / 2f, logoTop), logoWidth, if (rogBranding) Red else accent)
         }
     }
 }
@@ -87,8 +100,8 @@ private fun DrawScope.apexArc(inset: Float, start: Float, sweep: Float, color: C
 private fun DrawScope.apexBackdrop(paint: Paint, detail: Paint, cpu: SportReadingPosition, gpu: SportReadingPosition) {
     val hood = linePath(listOf(Offset(87f, 523f), Offset(140f, 383f), Offset(324f, 245f),
         Offset(555f, 181f), Offset(1219f, 181f), Offset(1450f, 245f), Offset(1634f, 383f),
-        Offset(1687f, 523f), Offset(1640f, 701f), Offset(134f, 701f)), closed = true)
-    drawPath(hood, Brush.verticalGradient(listOf(Color(0xFF17191F), Color.Black, Color(0xFF101217)), 181f, 701f))
+        Offset(1687f, 523f), Offset(1663f, 746f), Offset(111f, 746f)), closed = true)
+    drawPath(hood, Brush.verticalGradient(listOf(Color(0xFF17191F), Color.Black, Color(0xFF101217)), 181f, 746f))
     drawPath(hood, Color(0xFF282C33), style = Stroke(2f))
     apexArc(6f, ApexStart, ApexSweep, Color(0xFF111318), 46f)
     apexArc(6f, ApexStart + ApexSweep * .8f, ApexSweep * .2f, Color(0xFF250B0A), 46f)
@@ -124,14 +137,20 @@ private fun DrawScope.apexBackdrop(paint: Paint, detail: Paint, cpu: SportReadin
             paint.style = Paint.Style.FILL
         }
     }
-    val lowerBand = linePath(listOf(Offset(108f, 697f), Offset(252f, 661f), Offset(688f, 661f),
-        Offset(760f, 700f), Offset(1014f, 700f), Offset(1086f, 661f), Offset(1522f, 661f), Offset(1666f, 697f)))
-    drawPath(lowerBand, StoWhite.copy(alpha = .58f), style = Stroke(2f, join = StrokeJoin.Miter))
-    label(detail, "GPU LOAD", gpu.x, 326f, 22f, StoWhite, true)
-    label(detail, "CPU LOAD", cpu.x, 507f, 22f, StoWhite, true)
-    drawLine(StoWhite.copy(alpha = .35f), Offset(1506f, 435f), Offset(1650f, 435f))
-    label(detail, "CPU TEMP", cpu.temperatureX, 463f, 18f, StoWhite, true)
-    label(detail, "GPU TEMP", gpu.temperatureX, 560f, 18f, StoWhite, true)
+    val footerRim = listOf(Offset(111f, 746f), Offset(229f, 712f), Offset(608f, 712f),
+        Offset(712f, 610f), Offset(1062f, 610f), Offset(1166f, 712f), Offset(1545f, 712f), Offset(1663f, 746f))
+    val footer = linePath(footerRim + listOf(Offset(1712f, 839f), Offset(62f, 839f)), closed = true)
+    drawPath(footer, Brush.verticalGradient(listOf(Color(0xFF13151B), Color(0xFF050609)), 610f, 839f))
+    drawPath(footer, Color(0xFF343940), style = Stroke(2f))
+    drawPath(linePath(footerRim), StoWhite.copy(alpha = .72f), style = Stroke(2.5f, join = StrokeJoin.Miter))
+    for (x in listOf(708f, 1066f)) {
+        drawLine(StoWhite.copy(alpha = .36f), Offset(x, 750f), Offset(x, 814f), 1.5f)
+    }
+    label(detail, "GPU LOAD", gpu.x, 337f, 25f, StoWhite, true)
+    label(detail, "CPU LOAD", cpu.x, 518f, 25f, StoWhite, true)
+    drawLine(StoWhite.copy(alpha = .55f), Offset(1413f, 518f), Offset(1413f, 594f), 1.5f)
+    label(detail, "CPU TEMP", cpu.temperatureX, 537f, 20f, StoWhite, true)
+    label(detail, "GPU TEMP", gpu.temperatureX, 537f, 20f, StoWhite, true)
 }
 
 private fun linePath(points: List<Offset>, closed: Boolean = false) = Path().apply {
@@ -143,15 +162,15 @@ private fun linePath(points: List<Offset>, closed: Boolean = false) = Path().app
 private fun wingPath(mirror: Boolean): Path {
     fun x(value: Float) = if (mirror) WIDTH - value else value
     return Path().apply {
-        moveTo(x(668f), 632f)
-        lineTo(x(360f), 632f)
-        quadraticTo(x(308f), 632f, x(270f), 606f)
-        lineTo(x(158f), 517f)
-        quadraticTo(x(121f), 486f, x(121f), 428f)
-        quadraticTo(x(122f), 310f, x(228f), 249f)
-        lineTo(x(316f), 203f)
-        lineTo(x(458f), 197f)
-        lineTo(x(677f), 197f)
+        moveTo(x(668f), 748f)
+        lineTo(x(360f), 748f)
+        quadraticTo(x(303f), 748f, x(265f), 716f)
+        lineTo(x(158f), 600f)
+        quadraticTo(x(121f), 559f, x(121f), 508f)
+        lineTo(x(121f), 399f)
+        quadraticTo(x(122f), 318f, x(228f), 251f)
+        lineTo(x(300f), 207f)
+        lineTo(x(735f), 207f)
     }
 }
 
@@ -160,28 +179,37 @@ private val RightWing by lazy { PathMeasure().apply { setPath(wingPath(true), fa
 
 private fun DrawScope.wingBackdrop(paint: Paint, detail: Paint, cpu: SportReadingPosition, gpu: SportReadingPosition) {
     val outer = Path().apply {
-        moveTo(88f, 330f); quadraticTo(147f, 171f, 366f, 167f)
-        lineTo(1408f, 167f); quadraticTo(1627f, 171f, 1686f, 330f)
-        lineTo(1686f, 570f); lineTo(1574f, 694f); lineTo(200f, 694f); lineTo(88f, 570f); close()
+        moveTo(88f, 355f)
+        quadraticTo(105f, 183f, 336f, 175f)
+        lineTo(1438f, 175f)
+        quadraticTo(1669f, 183f, 1686f, 355f)
+        lineTo(1686f, 610f)
+        lineTo(1545f, 825f)
+        lineTo(229f, 825f)
+        lineTo(88f, 610f)
+        close()
     }
-    drawPath(outer, Brush.verticalGradient(listOf(Color(0xFF15162F), Color(0xFF191D43), Color(0xFF0C1025)), 167f, 694f))
+    drawPath(outer, Brush.verticalGradient(listOf(Color(0xFF11132A), Color(0xFF181C3D), Color(0xFF0D1023)), 175f, 825f))
     drawPath(outer, WingWhite.copy(alpha = .24f), style = Stroke(1.5f, join = StrokeJoin.Miter))
     for (mirror in listOf(false, true)) {
         fun edge(x: Float, y: Float) = Offset(if (mirror) WIDTH - x else x, y)
-        val facet = linePath(listOf(edge(114f, 412f), edge(184f, 279f), edge(318f, 198f),
-            edge(673f, 185f), edge(592f, 252f), edge(535f, 327f), edge(504f, 403f),
-            edge(513f, 503f), edge(564f, 584f), edge(674f, 644f), edge(363f, 650f), edge(151f, 535f)), closed = true)
+        val facet = linePath(listOf(edge(114f, 409f), edge(181f, 281f), edge(300f, 195f),
+            edge(741f, 193f), edge(657f, 295f), edge(595f, 438f), edge(635f, 579f),
+            edge(714f, 753f), edge(355f, 769f), edge(155f, 606f)), closed = true)
         clipPath(outer) {
-            drawPath(facet, Brush.verticalGradient(listOf(Color(0xFF343854), Color(0xFF222847), Color(0xFF141833)), 185f, 650f))
+            drawPath(facet, Brush.verticalGradient(listOf(Color(0xFF2B2D49), Color(0xFF1F2447), Color(0xFF121631)), 193f, 769f))
             drawPath(facet, WingWhite.copy(alpha = .15f), style = Stroke(1f))
         }
     }
     wingScale(paint, LeftWing, false)
     wingScale(paint, RightWing, true)
-    label(detail, "CPU LOAD", cpu.x, 373f, 21f, WingWhite, true)
-    label(detail, "GPU LOAD", gpu.x, 373f, 21f, WingWhite, true)
-    for (center in listOf(cpu.x, gpu.x)) {
-        drawLine(WingWhite.copy(alpha = .35f), Offset(center - 108f, 496f), Offset(center + 108f, 496f))
+    label(detail, "CPU LOAD", cpu.x, 342f, 25f, WingWhite, true)
+    label(detail, "GPU LOAD", gpu.x, 360f, 24f, WingWhite, true)
+    for ((name, position) in listOf("CPU TEMP" to cpu, "GPU TEMP" to gpu)) {
+        for (y in listOf(489f, 546f)) {
+            drawLine(WingWhite.copy(alpha = .50f), Offset(position.x - 146f, y), Offset(position.x + 146f, y), 1.5f)
+        }
+        label(detail, name, position.x - 65f, position.temperatureY, 20f, WingWhite, true)
     }
 }
 
@@ -189,7 +217,7 @@ private fun DrawScope.wingScale(paint: Paint, measure: PathMeasure, mirror: Bool
     drawMeasuredWing(measure, 0f, 100f, Color(0xFF101425), 29f)
     drawMeasuredWing(measure, 0f, 100f, Color(0xFF575D76), 23f)
     drawMeasuredWing(measure, 0f, 100f, Color(0xFF292F4E), 19f)
-    drawMeasuredWing(measure, 0f, 100f, WingWhite.copy(alpha = .72f), 2f)
+    drawMeasuredWing(measure, 0f, 100f, WingWhite.copy(alpha = .85f), 3f)
     drawMeasuredWing(measure, 80f, 100f, WingRed, 3f)
     for (tick in 0..40) {
         val fraction = tick / 40f

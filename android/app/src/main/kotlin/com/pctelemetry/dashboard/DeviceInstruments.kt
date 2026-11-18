@@ -15,10 +15,11 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.drawscope.clipRect
 
 @Composable
-internal fun PhoneStatusLayer(paint: Paint, phone: PhoneStatus, sport: Boolean) {
+internal fun PhoneStatusLayer(paint: Paint, phone: PhoneStatus, sport: Boolean,
+    clockTop: Float = SportPreset.CLASSIC.clockTop) {
     Canvas(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
         design {
-            if (sport) sportPhoneStatus(paint, phone) else hudPhoneStatus(paint, phone)
+            if (sport) sportPhoneStatus(paint, phone, clockTop) else hudPhoneStatus(paint, phone)
         }
     }
 }
@@ -66,7 +67,7 @@ internal fun DrawScope.segmentTime(time: String, centerX: Float, top: Float, hei
     }
 }
 
-internal fun DrawScope.sportPhoneStatus(paint: Paint, phone: PhoneStatus) {
+internal fun DrawScope.sportPhoneStatus(paint: Paint, phone: PhoneStatus, clockTop: Float) {
     val percent = phone.battery.percent
     val batteryColor = when {
         percent == null -> Silver
@@ -85,12 +86,12 @@ internal fun DrawScope.sportPhoneStatus(paint: Paint, phone: PhoneStatus) {
         }
     }
     // Recessed cluster display: silver bezel, red keyline and smoked glass.
-    drawRoundRect(Brush.verticalGradient(listOf(Color(0xFF667078), Color(0xFF171D23)), 610f, 679f),
-        Offset(767f, 610f), Size(240f, 69f), CornerRadius(7f))
-    drawRoundRect(Color(0xFF040708), Offset(770f, 613f), Size(234f, 63f), CornerRadius(5f))
-    drawLine(Red.copy(alpha = 0.65f), Offset(786f, 675f), Offset(988f, 675f), 1f)
-    label(paint, "LOCAL TIME", 887f, 628f, 10f, Silver, true)
-    segmentTime(phone.time, 887f, 636f, 29f, White)
+    drawRoundRect(Brush.verticalGradient(listOf(Color(0xFF667078), Color(0xFF171D23)), clockTop, clockTop + 69f),
+        Offset(767f, clockTop), Size(240f, 69f), CornerRadius(7f))
+    drawRoundRect(Color(0xFF040708), Offset(770f, clockTop + 3f), Size(234f, 63f), CornerRadius(5f))
+    drawLine(Red.copy(alpha = 0.65f), Offset(786f, clockTop + 65f), Offset(988f, clockTop + 65f), 1f)
+    label(paint, "LOCAL TIME", 887f, clockTop + 18f, 10f, Silver, true)
+    segmentTime(phone.time, 887f, clockTop + 26f, 29f, White)
 }
 
 internal fun DrawScope.hudPhoneStatus(paint: Paint, phone: PhoneStatus) {

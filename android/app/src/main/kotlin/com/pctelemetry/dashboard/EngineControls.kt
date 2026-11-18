@@ -32,12 +32,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun SportEngineStop(onStop: () -> Unit) {
+internal fun SportEngineStop(top: Float, onStop: () -> Unit) {
     val description = stringResource(R.string.engine_stop_description)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val unit = minOf(maxWidth / WIDTH, maxHeight / HEIGHT)
         Box(Modifier.offset((maxWidth - unit * WIDTH) / 2 + unit * 777f,
-            (maxHeight - unit * HEIGHT) / 2 + unit * 495f)
+            (maxHeight - unit * HEIGHT) / 2 + unit * top)
             .size(unit * 220f, unit * 95f)
             .testTag("engine-stop-control")
             .semantics { contentDescription = description; role = Role.Button }
