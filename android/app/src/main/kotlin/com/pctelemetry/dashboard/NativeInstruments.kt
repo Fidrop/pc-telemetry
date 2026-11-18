@@ -113,35 +113,29 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             val cpuNeedle = sweep(values.cpuPointer)
             val gpuNeedle = sweep(values.gpuPointer)
             val instruments = if (preset == SportPreset.CLASSIC) paint else presetPaint
-            val loadBaseline = when (preset) {
-                SportPreset.CLASSIC -> 520f
-                SportPreset.APEX -> 505f
-                SportPreset.TOURING -> 479f
-            }
-            val temperatureBaseline = when (preset) {
-                SportPreset.CLASSIC, SportPreset.APEX -> 605f
-                SportPreset.TOURING -> 567f
-            }
+            val cpuPosition = preset.cpuPosition
+            val gpuPosition = preset.gpuPosition
+            val staleOffset = if (preset == SportPreset.CLASSIC) 36f else 29f
             if (preset == SportPreset.CLASSIC) {
                 pointer(Offset(470f, 410f), cpuNeedle)
                 pointer(Offset(1304f, 410f), gpuNeedle)
             } else {
                 sportPresetLoad(preset, cpuNeedle, gpuNeedle)
             }
-            reading(instruments, cpu, 470f, loadBaseline, 80f)
-            reading(instruments, gpu, 1304f, loadBaseline, 80f)
+            reading(instruments, cpu, cpuPosition.x, cpuPosition.loadY, cpuPosition.loadSize)
+            reading(instruments, gpu, gpuPosition.x, gpuPosition.loadY, gpuPosition.loadSize)
             if (selfTest == null && state.snapshot?.metrics?.cpuUsage?.status == "stale")
-                label(paint, staleLabel, 470f, loadBaseline + 36f, 23f, Orange, true)
+                label(paint, staleLabel, cpuPosition.x, cpuPosition.loadY + staleOffset, 23f, Orange, true)
             if (selfTest == null && state.snapshot?.metrics?.gpuUsage?.status == "stale")
-                label(paint, staleLabel, 1304f, loadBaseline + 36f, 23f, Orange, true)
+                label(paint, staleLabel, gpuPosition.x, gpuPosition.loadY + staleOffset, 23f, Orange, true)
             val cpuTemp = number(sweep(values.cpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.cpuTemperature?.status, staleLabel) else ""
             val gpuTemp = number(sweep(values.gpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel) else ""
             if (selfTest == null && state.snapshot?.metrics?.cpuTemperature?.status == "stale")
-                label(instruments, cpuTemp, 470f, temperatureBaseline, 43f, center = true)
-            else reading(instruments, sweep(values.cpuTemp), 470f, temperatureBaseline, 43f, unit = "°C")
+                label(instruments, cpuTemp, cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, center = true)
+            else reading(instruments, sweep(values.cpuTemp), cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, unit = "°C")
             if (selfTest == null && state.snapshot?.metrics?.gpuTemperature?.status == "stale")
-                label(instruments, gpuTemp, 1304f, temperatureBaseline, 43f, center = true)
-            else reading(instruments, sweep(values.gpuTemp), 1304f, temperatureBaseline, 43f, unit = "°C")
+                label(instruments, gpuTemp, gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, center = true)
+            else reading(instruments, sweep(values.gpuTemp), gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, unit = "°C")
             label(detailPaint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 16f,
                 if (selfTest != null) Orange else if (state.isOffline) Red else Silver)
             label(paint, "ENGINE STOP", 887f, 535f, 27f, White, true, 190f)

@@ -72,6 +72,6 @@
     <string name="sport_preset">SPORT 布局</string>
     <string name="sport_classic">经典</string>
     <string name="sport_apex">尖锋</string>
-    <string name="sport_touring">双环</string>
+    <string name="sport_touring">双翼</string>
     <string name="settings_display_tab">显示</string>
 </resources>

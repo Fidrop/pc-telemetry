@@ -72,6 +72,6 @@
     <string name="sport_preset">SPORT layout</string>
     <string name="sport_classic">Classic</string>
     <string name="sport_apex">Apex</string>
-    <string name="sport_touring">Twin Ring</string>
+    <string name="sport_touring">Twin Wing</string>
     <string name="settings_display_tab">Display</string>
 </resources>

@@ -130,7 +130,7 @@ class DashboardInstrumentedTest {
         save("sport-preset-classic.png")
         for ((label, preset, file) in listOf(
             Triple("Apex", SportPreset.APEX, "sport-preset-apex.png"),
-            Triple("Twin Ring", SportPreset.TOURING, "sport-preset-twin-ring.png"),
+            Triple("Twin Wing", SportPreset.TOURING, "sport-preset-twin-wing.png"),
             Triple("Classic", SportPreset.CLASSIC, "sport-preset-classic.png")
         )) {
             rule.onNodeWithContentDescription("Settings").performClick()
