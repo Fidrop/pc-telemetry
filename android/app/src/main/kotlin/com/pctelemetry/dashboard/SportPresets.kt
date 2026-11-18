@@ -10,6 +10,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.res.painterResource
 import kotlin.math.cos
 import kotlin.math.sin
@@ -84,25 +85,43 @@ private fun DrawScope.apexArc(inset: Float, start: Float, sweep: Float, color: C
 }
 
 private fun DrawScope.apexBackdrop(paint: Paint, detail: Paint, cpu: SportReadingPosition, gpu: SportReadingPosition) {
-    apexArc(-15f, ApexStart, ApexSweep, StoWhite.copy(alpha = .44f), 1.4f)
-    apexArc(17f, ApexStart, ApexSweep, StoWhite.copy(alpha = .70f), 1.8f)
-    apexArc(17f, ApexStart + ApexSweep * .8f, ApexSweep * .2f, StoRed, 2.4f)
-    for (index in 0 until 60) {
-        val start = ApexStart + index * ApexSweep / 60f
-        val redZone = index >= 48
-        apexArc(0f, start, ApexSweep / 60f - .32f,
-            if (redZone) Color(0xFF44110E) else Color(0xFF1C1C22), 23f)
+    val hood = linePath(listOf(Offset(87f, 523f), Offset(140f, 383f), Offset(324f, 245f),
+        Offset(555f, 181f), Offset(1219f, 181f), Offset(1450f, 245f), Offset(1634f, 383f),
+        Offset(1687f, 523f), Offset(1640f, 701f), Offset(134f, 701f)), closed = true)
+    drawPath(hood, Brush.verticalGradient(listOf(Color(0xFF17191F), Color.Black, Color(0xFF101217)), 181f, 701f))
+    drawPath(hood, Color(0xFF282C33), style = Stroke(2f))
+    apexArc(6f, ApexStart, ApexSweep, Color(0xFF111318), 46f)
+    apexArc(6f, ApexStart + ApexSweep * .8f, ApexSweep * .2f, Color(0xFF250B0A), 46f)
+    apexArc(-18f, ApexStart, ApexSweep, StoWhite.copy(alpha = .50f), 1.5f)
+    // The inner keyline drops under each major numeral, separate from the outer scale ticks.
+    val innerEdge = (0..100).map { index ->
+        val distanceToTick = minOf(index % 10, 10 - index % 10)
+        val notch = when (distanceToTick) { 0, 1 -> 10f; 2 -> 4f; else -> 0f }
+        apexPoint(ApexStart + ApexSweep * index / 100f, 40f + notch)
+    }
+    drawPath(linePath(innerEdge), StoWhite.copy(alpha = .77f), style = Stroke(1.7f))
+    drawPath(linePath(innerEdge.drop(80)), StoRed, style = Stroke(1.9f))
+    for (row in 0..6) for (index in 1..179) {
+        val fraction = (index + (row % 2) * .5f) / 180f
+        val color = if (fraction >= .8f) StoRed else StoWhite
+        drawCircle(color.copy(alpha = if (fraction >= .8f) .32f else .18f),
+            1.05f, apexPoint(ApexStart + ApexSweep * fraction, -9f + row * 5.5f))
     }
     for (tick in 0..50) {
         val angle = ApexStart + tick * ApexSweep / 50
         val major = tick % 5 == 0
         val color = if (tick >= 40) StoRed else StoWhite
         drawLine(color.copy(alpha = if (major) 1f else .58f),
-            apexPoint(angle, -16f), apexPoint(angle, if (major) -5f else -10f),
+            apexPoint(angle, -20f), apexPoint(angle, if (major) -9f else -15f),
             if (major) 2.8f else 1.2f, cap = StrokeCap.Butt)
         if (major) {
-            val p = apexPoint(angle, 55f)
+            val p = apexPoint(angle, 32f)
+            drawPath(linePath(listOf(p + Offset(-21f, -14f), p + Offset(21f, -14f),
+                p + Offset(24f, 12f), p + Offset(-24f, 12f)), closed = true), Color(0xFF08090C))
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.25f
             label(paint, (tick * 2).toString(), p.x, p.y + 8f, 26f, color, true)
+            paint.style = Paint.Style.FILL
         }
     }
     val lowerBand = linePath(listOf(Offset(108f, 697f), Offset(252f, 661f), Offset(688f, 661f),
@@ -115,9 +134,10 @@ private fun DrawScope.apexBackdrop(paint: Paint, detail: Paint, cpu: SportReadin
     label(detail, "GPU TEMP", gpu.temperatureX, 560f, 18f, StoWhite, true)
 }
 
-private fun linePath(points: List<Offset>) = Path().apply {
+private fun linePath(points: List<Offset>, closed: Boolean = false) = Path().apply {
     moveTo(points.first().x, points.first().y)
     points.drop(1).forEach { lineTo(it.x, it.y) }
+    if (closed) close()
 }
 
 private fun wingPath(mirror: Boolean): Path {
@@ -128,8 +148,9 @@ private fun wingPath(mirror: Boolean): Path {
         quadraticTo(x(308f), 632f, x(270f), 606f)
         lineTo(x(158f), 517f)
         quadraticTo(x(121f), 486f, x(121f), 428f)
-        quadraticTo(x(122f), 310f, x(230f), 246f)
-        quadraticTo(x(313f), 197f, x(458f), 197f)
+        quadraticTo(x(122f), 310f, x(228f), 249f)
+        lineTo(x(316f), 203f)
+        lineTo(x(458f), 197f)
         lineTo(x(677f), 197f)
     }
 }
@@ -145,6 +166,16 @@ private fun DrawScope.wingBackdrop(paint: Paint, detail: Paint, cpu: SportReadin
     }
     drawPath(outer, Brush.verticalGradient(listOf(Color(0xFF15162F), Color(0xFF191D43), Color(0xFF0C1025)), 167f, 694f))
     drawPath(outer, WingWhite.copy(alpha = .24f), style = Stroke(1.5f, join = StrokeJoin.Miter))
+    for (mirror in listOf(false, true)) {
+        fun edge(x: Float, y: Float) = Offset(if (mirror) WIDTH - x else x, y)
+        val facet = linePath(listOf(edge(114f, 412f), edge(184f, 279f), edge(318f, 198f),
+            edge(673f, 185f), edge(592f, 252f), edge(535f, 327f), edge(504f, 403f),
+            edge(513f, 503f), edge(564f, 584f), edge(674f, 644f), edge(363f, 650f), edge(151f, 535f)), closed = true)
+        clipPath(outer) {
+            drawPath(facet, Brush.verticalGradient(listOf(Color(0xFF343854), Color(0xFF222847), Color(0xFF141833)), 185f, 650f))
+            drawPath(facet, WingWhite.copy(alpha = .15f), style = Stroke(1f))
+        }
+    }
     wingScale(paint, LeftWing, false)
     wingScale(paint, RightWing, true)
     label(detail, "CPU LOAD", cpu.x, 373f, 21f, WingWhite, true)
@@ -155,22 +186,24 @@ private fun DrawScope.wingBackdrop(paint: Paint, detail: Paint, cpu: SportReadin
 }
 
 private fun DrawScope.wingScale(paint: Paint, measure: PathMeasure, mirror: Boolean) {
-    drawMeasuredWing(measure, 0f, 100f, Color(0xFF25284A), 19f)
+    drawMeasuredWing(measure, 0f, 100f, Color(0xFF101425), 29f)
+    drawMeasuredWing(measure, 0f, 100f, Color(0xFF575D76), 23f)
+    drawMeasuredWing(measure, 0f, 100f, Color(0xFF292F4E), 19f)
     drawMeasuredWing(measure, 0f, 100f, WingWhite.copy(alpha = .72f), 2f)
     drawMeasuredWing(measure, 80f, 100f, WingRed, 3f)
-    for (tick in 0..20) {
-        val fraction = tick / 20f
+    for (tick in 0..40) {
+        val fraction = tick / 40f
         val distance = measure.length * fraction
         val pos = measure.getPosition(distance)
         val tangent = measure.getTangent(distance)
         val inward = if (mirror) Offset(tangent.y, -tangent.x) else Offset(-tangent.y, tangent.x)
         val major = tick % 4 == 0
-        val color = if (tick >= 16) WingRed else WingWhite
+        val color = if (tick >= 32) WingRed else WingWhite
         drawLine(color.copy(alpha = if (major) 1f else .62f), pos + inward * 10f,
             pos + inward * (if (major) 28f else 17f), if (major) 2.6f else 1.4f, cap = StrokeCap.Butt)
         if (major) {
             val marker = pos + inward * 49f
-            label(paint, (tick * 5).toString(), marker.x, marker.y + 7f, 22f, color, true)
+            label(paint, (tick * 5 / 2).toString(), marker.x, marker.y + 7f, 21f, color, true)
         }
     }
 }
@@ -186,15 +219,13 @@ internal fun DrawScope.sportPresetLoad(preset: SportPreset, cpu: Float?, gpu: Fl
     if (preset == SportPreset.APEX) {
         gpu?.coerceIn(0f, 100f)?.let { value ->
             val sweep = value * ApexSweep / 100f
-            for (index in 0 until 60) {
-                val start = index * ApexSweep / 60f
-                val length = (sweep - start).coerceIn(0f, ApexSweep / 60f - .32f)
-                if (length <= 0f) break
-                apexArc(0f, ApexStart + start, length,
-                    if (index >= 48) StoRed.copy(alpha = .63f) else StoWhite.copy(alpha = .30f), 19f)
-            }
+            val normal = minOf(sweep, ApexSweep * .8f)
+            if (normal > 0f) apexArc(5f, ApexStart, normal, StoWhite.copy(alpha = .15f), 39f)
+            if (sweep > normal) apexArc(5f, ApexStart + normal, sweep - normal, StoRed.copy(alpha = .30f), 39f)
             val angle = ApexStart + sweep
-            drawLine(StoRed, apexPoint(angle, -16f), apexPoint(angle, 23f), 5f, cap = StrokeCap.Butt)
+            val cursor = linePath(listOf(apexPoint(angle - .32f, -19f), apexPoint(angle + .32f, -19f),
+                apexPoint(angle + .16f, 12f), apexPoint(angle, 18f), apexPoint(angle - .16f, 12f)), closed = true)
+            drawPath(cursor, StoRed)
         }
     } else {
         for ((measure, sample) in listOf(LeftWing to cpu, RightWing to gpu)) {
@@ -206,7 +237,9 @@ internal fun DrawScope.sportPresetLoad(preset: SportPreset, cpu: Float?, gpu: Fl
             val point = measure.getPosition(distance)
             val tangent = measure.getTangent(distance)
             val normal = Offset(-tangent.y, tangent.x)
-            drawLine(WingRed, point - normal * 12f, point + normal * 26f, 4f, cap = StrokeCap.Butt)
+            val inward = if (measure === LeftWing) normal else -normal
+            drawPath(linePath(listOf(point - inward * 12f - tangent * 3f, point - inward * 12f + tangent * 3f,
+                point + inward * 24f + tangent * 11f, point + inward * 15f - tangent * 5f), closed = true), WingRed)
         }
     }
 }
