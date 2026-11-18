@@ -36,10 +36,16 @@ internal val SportPreset.gpuPosition: SportReadingPosition
         SportPreset.TOURING -> SportReadingPosition(1322f, 465f, 94f, 1322f, 549f)
     }
 
-private val Steel = Color(0xFFC2CED8)
-private val WingBlue = Color(0xFF82ACDB)
-private val Track = Color(0xFF293849)
-private val Dark = Color(0xFF05080D)
+private val StoWhite = Color(0xFFEDF0F2)
+private val StoRed = Color(0xFFFF382B)
+private val WingWhite = Color(0xFFF3EEE4)
+private val WingRed = Color(0xFFFF4B2F)
+internal val SportPreset.readingColor: Color
+    get() = when (this) {
+        SportPreset.CLASSIC -> White
+        SportPreset.APEX -> StoWhite
+        SportPreset.TOURING -> WingWhite
+    }
 private const val ApexStart = 205f
 private const val ApexSweep = 130f
 
@@ -49,8 +55,9 @@ internal fun SportPresetBackdrop(preset: SportPreset, paint: Paint, detail: Pain
     Canvas(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
         design {
             val apex = preset == SportPreset.APEX
-            val accent = if (apex) Red else WingBlue
-            drawRect(Brush.verticalGradient(listOf(Dark, if (apex) Color(0xFF10131A) else Color(0xFF101C32), Dark),
+            val accent = if (apex) StoRed else WingWhite
+            drawRect(Brush.verticalGradient(listOf(Color.Black,
+                if (apex) Color(0xFF09090C) else Color(0xFF090A1A), Color.Black),
                 endY = HEIGHT), size = Size(WIDTH, HEIGHT))
             if (apex) apexBackdrop(paint, detail, preset.cpuPosition, preset.gpuPosition)
             else wingBackdrop(paint, detail, preset.cpuPosition, preset.gpuPosition)
@@ -77,16 +84,22 @@ private fun DrawScope.apexArc(inset: Float, start: Float, sweep: Float, color: C
 }
 
 private fun DrawScope.apexBackdrop(paint: Paint, detail: Paint, cpu: SportReadingPosition, gpu: SportReadingPosition) {
-    apexArc(0f, ApexStart, ApexSweep, Track, 27f)
-    apexArc(-15f, ApexStart, ApexSweep, Steel.copy(alpha = .47f), 1.6f)
-    apexArc(17f, ApexStart, ApexSweep, Steel.copy(alpha = .45f), 1.5f)
-    apexArc(0f, ApexStart + ApexSweep * .8f, ApexSweep * .2f, Color(0xFF701D27), 27f)
+    apexArc(-15f, ApexStart, ApexSweep, StoWhite.copy(alpha = .44f), 1.4f)
+    apexArc(17f, ApexStart, ApexSweep, StoWhite.copy(alpha = .70f), 1.8f)
+    apexArc(17f, ApexStart + ApexSweep * .8f, ApexSweep * .2f, StoRed, 2.4f)
+    for (index in 0 until 60) {
+        val start = ApexStart + index * ApexSweep / 60f
+        val redZone = index >= 48
+        apexArc(0f, start, ApexSweep / 60f - .32f,
+            if (redZone) Color(0xFF44110E) else Color(0xFF1C1C22), 23f)
+    }
     for (tick in 0..50) {
         val angle = ApexStart + tick * ApexSweep / 50
         val major = tick % 5 == 0
-        val color = if (tick >= 40) Red else Steel
-        drawLine(color.copy(alpha = if (major) .9f else .44f),
-            apexPoint(angle, -14f), apexPoint(angle, if (major) 0f else -7f), if (major) 2.8f else 1.2f)
+        val color = if (tick >= 40) StoRed else StoWhite
+        drawLine(color.copy(alpha = if (major) 1f else .58f),
+            apexPoint(angle, -16f), apexPoint(angle, if (major) -5f else -10f),
+            if (major) 2.8f else 1.2f, cap = StrokeCap.Butt)
         if (major) {
             val p = apexPoint(angle, 55f)
             label(paint, (tick * 2).toString(), p.x, p.y + 8f, 26f, color, true)
@@ -94,12 +107,12 @@ private fun DrawScope.apexBackdrop(paint: Paint, detail: Paint, cpu: SportReadin
     }
     val lowerBand = linePath(listOf(Offset(108f, 697f), Offset(252f, 661f), Offset(688f, 661f),
         Offset(760f, 700f), Offset(1014f, 700f), Offset(1086f, 661f), Offset(1522f, 661f), Offset(1666f, 697f)))
-    drawPath(lowerBand, Steel.copy(alpha = .45f), style = Stroke(2f))
-    label(detail, "GPU LOAD", gpu.x, 326f, 22f, Steel, true)
-    label(detail, "CPU LOAD", cpu.x, 507f, 22f, Steel, true)
-    drawLine(Steel.copy(alpha = .35f), Offset(1506f, 435f), Offset(1650f, 435f))
-    label(detail, "CPU TEMP", cpu.temperatureX, 463f, 18f, Steel, true)
-    label(detail, "GPU TEMP", gpu.temperatureX, 560f, 18f, Steel, true)
+    drawPath(lowerBand, StoWhite.copy(alpha = .58f), style = Stroke(2f, join = StrokeJoin.Miter))
+    label(detail, "GPU LOAD", gpu.x, 326f, 22f, StoWhite, true)
+    label(detail, "CPU LOAD", cpu.x, 507f, 22f, StoWhite, true)
+    drawLine(StoWhite.copy(alpha = .35f), Offset(1506f, 435f), Offset(1650f, 435f))
+    label(detail, "CPU TEMP", cpu.temperatureX, 463f, 18f, StoWhite, true)
+    label(detail, "GPU TEMP", gpu.temperatureX, 560f, 18f, StoWhite, true)
 }
 
 private fun linePath(points: List<Offset>) = Path().apply {
@@ -130,21 +143,21 @@ private fun DrawScope.wingBackdrop(paint: Paint, detail: Paint, cpu: SportReadin
         lineTo(1408f, 167f); quadraticTo(1627f, 171f, 1686f, 330f)
         lineTo(1686f, 570f); lineTo(1574f, 694f); lineTo(200f, 694f); lineTo(88f, 570f); close()
     }
-    drawPath(outer, Brush.verticalGradient(listOf(Color(0xFF18243A), Color(0xFF0A101C)), 167f, 694f))
-    drawPath(outer, Steel.copy(alpha = .22f), style = Stroke(2f))
+    drawPath(outer, Brush.verticalGradient(listOf(Color(0xFF15162F), Color(0xFF191D43), Color(0xFF0C1025)), 167f, 694f))
+    drawPath(outer, WingWhite.copy(alpha = .24f), style = Stroke(1.5f, join = StrokeJoin.Miter))
     wingScale(paint, LeftWing, false)
     wingScale(paint, RightWing, true)
-    label(detail, "CPU LOAD", cpu.x, 373f, 21f, Steel, true)
-    label(detail, "GPU LOAD", gpu.x, 373f, 21f, Steel, true)
+    label(detail, "CPU LOAD", cpu.x, 373f, 21f, WingWhite, true)
+    label(detail, "GPU LOAD", gpu.x, 373f, 21f, WingWhite, true)
     for (center in listOf(cpu.x, gpu.x)) {
-        drawLine(Steel.copy(alpha = .35f), Offset(center - 108f, 496f), Offset(center + 108f, 496f))
+        drawLine(WingWhite.copy(alpha = .35f), Offset(center - 108f, 496f), Offset(center + 108f, 496f))
     }
 }
 
 private fun DrawScope.wingScale(paint: Paint, measure: PathMeasure, mirror: Boolean) {
-    drawMeasuredWing(measure, 0f, 100f, Track, 35f)
-    drawMeasuredWing(measure, 0f, 100f, Steel.copy(alpha = .72f), 2f)
-    drawMeasuredWing(measure, 80f, 100f, Red.copy(alpha = .4f), 10f)
+    drawMeasuredWing(measure, 0f, 100f, Color(0xFF25284A), 19f)
+    drawMeasuredWing(measure, 0f, 100f, WingWhite.copy(alpha = .72f), 2f)
+    drawMeasuredWing(measure, 80f, 100f, WingRed, 3f)
     for (tick in 0..20) {
         val fraction = tick / 20f
         val distance = measure.length * fraction
@@ -152,8 +165,9 @@ private fun DrawScope.wingScale(paint: Paint, measure: PathMeasure, mirror: Bool
         val tangent = measure.getTangent(distance)
         val inward = if (mirror) Offset(tangent.y, -tangent.x) else Offset(-tangent.y, tangent.x)
         val major = tick % 4 == 0
-        val color = if (tick >= 16) Red else Steel
-        drawLine(color, pos + inward * 14f, pos + inward * (if (major) 30f else 22f), if (major) 2.5f else 1.4f)
+        val color = if (tick >= 16) WingRed else WingWhite
+        drawLine(color.copy(alpha = if (major) 1f else .62f), pos + inward * 10f,
+            pos + inward * (if (major) 28f else 17f), if (major) 2.6f else 1.4f, cap = StrokeCap.Butt)
         if (major) {
             val marker = pos + inward * 49f
             label(paint, (tick * 5).toString(), marker.x, marker.y + 7f, 22f, color, true)
@@ -165,27 +179,34 @@ private fun DrawScope.drawMeasuredWing(measure: PathMeasure, from: Float, to: Fl
     if (to <= from) return
     val path = Path()
     measure.getSegment(measure.length * from / 100f, measure.length * to / 100f, path, true)
-    drawPath(path, color, style = Stroke(width, cap = StrokeCap.Butt, join = StrokeJoin.Round))
+    drawPath(path, color, style = Stroke(width, cap = StrokeCap.Butt, join = StrokeJoin.Miter))
 }
 
 internal fun DrawScope.sportPresetLoad(preset: SportPreset, cpu: Float?, gpu: Float?) {
     if (preset == SportPreset.APEX) {
         gpu?.coerceIn(0f, 100f)?.let { value ->
             val sweep = value * ApexSweep / 100f
-            if (sweep > 0f) apexArc(0f, ApexStart, sweep, Color(0xFFD3DFEA).copy(alpha = .37f), 22f)
+            for (index in 0 until 60) {
+                val start = index * ApexSweep / 60f
+                val length = (sweep - start).coerceIn(0f, ApexSweep / 60f - .32f)
+                if (length <= 0f) break
+                apexArc(0f, ApexStart + start, length,
+                    if (index >= 48) StoRed.copy(alpha = .63f) else StoWhite.copy(alpha = .30f), 19f)
+            }
             val angle = ApexStart + sweep
-            drawLine(Red, apexPoint(angle, -14f), apexPoint(angle, 23f), 6f)
+            drawLine(StoRed, apexPoint(angle, -16f), apexPoint(angle, 23f), 5f, cap = StrokeCap.Butt)
         }
     } else {
         for ((measure, sample) in listOf(LeftWing to cpu, RightWing to gpu)) {
             val value = sample?.coerceIn(0f, 100f) ?: continue
-            drawMeasuredWing(measure, 0f, value, WingBlue.copy(alpha = .57f), 20f)
-            drawMeasuredWing(measure, 0f, value, Steel, 2f)
+            drawMeasuredWing(measure, 0f, value, WingWhite.copy(alpha = .22f), 12f)
+            drawMeasuredWing(measure, 0f, value.coerceAtMost(80f), WingWhite, 3f)
+            drawMeasuredWing(measure, 80f, value, WingRed, 4f)
             val distance = measure.length * value / 100f
             val point = measure.getPosition(distance)
             val tangent = measure.getTangent(distance)
             val normal = Offset(-tangent.y, tangent.x)
-            drawLine(Red, point - normal * 16f, point + normal * 29f, 5f)
+            drawLine(WingRed, point - normal * 12f, point + normal * 26f, 4f, cap = StrokeCap.Butt)
         }
     }
 }

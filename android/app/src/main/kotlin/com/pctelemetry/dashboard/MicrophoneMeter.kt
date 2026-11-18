@@ -111,20 +111,25 @@ internal fun rememberMicrophoneMeter(enabled: Boolean, sensitivity: Int): State<
 }
 
 @Composable
-internal fun SportMicrophoneBars(reading: MicrophoneReading, modifier: Modifier = Modifier) {
+internal fun SportMicrophoneBars(reading: MicrophoneReading, preset: SportPreset, modifier: Modifier = Modifier) {
     val description = stringResource(if (reading.failed) R.string.microphone_unavailable
         else if (reading.capturing) R.string.microphone_active else R.string.microphone_starting)
     Canvas(modifier.fillMaxSize().testTag("sport-microphone-meter").semantics { stateDescription = description }) {
         design {
             val lit = ((reading.level ?: 0f) * 32).toInt()
             val gradient = Brush.verticalGradient(listOf(Color(0xFFFF7789), Red, Color(0xFF74051A)), 180f, 660f)
+            val classic = preset == SportPreset.CLASSIC
+            val frameRadius = CornerRadius(if (classic) 5f else 1f)
+            val segmentRadius = CornerRadius(if (classic) 2f else 0f)
+            val idle = if (classic) Color(0xFF39121D) else Color(0xFF58252E)
             for (x in listOf(26f, 1732f)) {
-                drawRoundRect(Color(0xFF170B10), Offset(x - 5, 168f), Size(26f, 508f), CornerRadius(5f))
-                drawRoundRect(Red.copy(alpha = 0.3f), Offset(x - 5, 168f), Size(26f, 508f), CornerRadius(5f), style = Stroke(1f))
+                drawRoundRect(Color(0xFF170B10), Offset(x - 5, 168f), Size(26f, 508f), frameRadius)
+                drawRoundRect(Red.copy(alpha = if (classic) .3f else .55f),
+                    Offset(x - 5, 168f), Size(26f, 508f), frameRadius, style = Stroke(1f))
                 for (index in 0..31) {
                     val origin = Offset(x, 650f - index * 15f)
-                    if (index < lit) drawRoundRect(gradient, origin, Size(16f, 10f), CornerRadius(2f))
-                    else drawRoundRect(Color(0xFF39121D), origin, Size(16f, 10f), CornerRadius(2f))
+                    if (index < lit) drawRoundRect(gradient, origin, Size(16f, 10f), segmentRadius)
+                    else drawRoundRect(idle, origin, Size(16f, 10f), segmentRadius)
                 }
             }
         }

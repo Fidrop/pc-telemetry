@@ -122,8 +122,8 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             } else {
                 sportPresetLoad(preset, cpuNeedle, gpuNeedle)
             }
-            reading(instruments, cpu, cpuPosition.x, cpuPosition.loadY, cpuPosition.loadSize)
-            reading(instruments, gpu, gpuPosition.x, gpuPosition.loadY, gpuPosition.loadSize)
+            reading(instruments, cpu, cpuPosition.x, cpuPosition.loadY, cpuPosition.loadSize, preset.readingColor)
+            reading(instruments, gpu, gpuPosition.x, gpuPosition.loadY, gpuPosition.loadSize, preset.readingColor)
             if (selfTest == null && state.snapshot?.metrics?.cpuUsage?.status == "stale")
                 label(paint, staleLabel, cpuPosition.x, cpuPosition.loadY + staleOffset, 23f, Orange, true)
             if (selfTest == null && state.snapshot?.metrics?.gpuUsage?.status == "stale")
@@ -132,10 +132,10 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             val gpuTemp = number(sweep(values.gpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel) else ""
             if (selfTest == null && state.snapshot?.metrics?.cpuTemperature?.status == "stale")
                 label(instruments, cpuTemp, cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, center = true)
-            else reading(instruments, sweep(values.cpuTemp), cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, unit = "°C")
+            else reading(instruments, sweep(values.cpuTemp), cpuPosition.temperatureX, cpuPosition.temperatureY, 43f, preset.readingColor, unit = "°C")
             if (selfTest == null && state.snapshot?.metrics?.gpuTemperature?.status == "stale")
                 label(instruments, gpuTemp, gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, center = true)
-            else reading(instruments, sweep(values.gpuTemp), gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, unit = "°C")
+            else reading(instruments, sweep(values.gpuTemp), gpuPosition.temperatureX, gpuPosition.temperatureY, 43f, preset.readingColor, unit = "°C")
             label(detailPaint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 16f,
                 if (selfTest != null) Orange else if (state.isOffline) Red else Silver)
             label(paint, "ENGINE STOP", 887f, 535f, 27f, White, true, 190f)

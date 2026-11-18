@@ -203,7 +203,7 @@ private fun Dashboard(model: DashboardViewModel, settings: UiSettings) {
                         }, rogBranding = settings.rogBranding, phone = phone,
                         onEngineStop = { sportEngineOff = true; selfTest = false; panel = false; pairing = false },
                         selfTestRecovery = startupRecovery.value, preset = settings.sportPreset)
-                    if (settings.microphoneMeter) SportMicrophoneBars(microphone, instruments)
+                    if (settings.microphoneMeter) SportMicrophoneBars(microphone, settings.sportPreset, instruments)
                 }
             }
         } else {

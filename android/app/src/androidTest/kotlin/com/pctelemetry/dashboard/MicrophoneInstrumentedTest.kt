@@ -89,6 +89,16 @@ class MicrophoneInstrumentedTest {
         rule.onNodeWithTag("settings-close").assertIsDisplayed().performClick()
         save("sport-microphone.png")
 
+        for ((option, file) in listOf("Apex" to "sport-preset-apex.png", "Twin Wing" to "sport-preset-twin-wing.png")) {
+            rule.onNodeWithContentDescription("Settings").performClick()
+            rule.onNodeWithTag("settings-tab-display").performClick()
+            rule.onNodeWithText(option).performScrollTo().performClick().assertIsSelected()
+            rule.onNodeWithTag("settings-close").performClick()
+            rule.onNodeWithTag("sport-microphone-meter").assertIsDisplayed()
+            assertEquals(sessions, audio.activeRecordingConfigurations.map { it.clientAudioSessionId }.toSet())
+            save(file)
+        }
+
         rule.onNodeWithContentDescription("SPORT dashboard").performTouchInput { swipeLeft() }
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
         rule.onNodeWithTag("sport-microphone-meter").assertDoesNotExist()
