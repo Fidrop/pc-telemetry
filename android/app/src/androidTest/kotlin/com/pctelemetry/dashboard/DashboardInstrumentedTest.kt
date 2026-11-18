@@ -118,6 +118,35 @@ class DashboardInstrumentedTest {
         rule.onNodeWithContentDescription("HUD dashboard").assertExists()
     }
 
+    @Test fun sportPresetSelectionPersistsAndKeepsSportControls() {
+        val model = rule.runOnUiThread {
+            ViewModelProvider(rule.activity)[DashboardViewModel::class.java].also {
+                it.updateSettings(UiSettings(DashboardTheme.SPORT, "en", "off", false))
+            }
+        }
+        rule.onNodeWithText("Enter DEMO").performClick()
+        rule.waitUntil(5_000) { model.state.value.snapshot != null }
+        rule.onNodeWithTag("engine-stop-control").assertIsDisplayed()
+        save("sport-preset-classic.png")
+        for ((label, preset, file) in listOf(
+            Triple("Apex", SportPreset.APEX, "sport-preset-apex.png"),
+            Triple("Twin Ring", SportPreset.TOURING, "sport-preset-twin-ring.png"),
+            Triple("Classic", SportPreset.CLASSIC, "sport-preset-classic.png")
+        )) {
+            rule.onNodeWithContentDescription("Settings").performClick()
+            rule.onNodeWithTag("settings-tab-display").performClick()
+            rule.onNodeWithText(label).performScrollTo().performClick().assertIsSelected()
+            runBlocking { withTimeout(5_000) { UiSettingsStore(context).settings.first { it.sportPreset == preset } } }
+            if (preset == SportPreset.TOURING) saveDialog("sport-preset-settings.png")
+            rule.onNodeWithTag("settings-close").performClick()
+            rule.onNodeWithTag("engine-stop-control").assertIsDisplayed()
+            rule.onNodeWithContentDescription("SPORT dashboard").assertIsDisplayed()
+            save(file)
+        }
+        rule.onNodeWithContentDescription("SPORT dashboard").performTouchInput { swipeLeft() }
+        rule.onNodeWithContentDescription("HUD dashboard").assertIsDisplayed()
+    }
+
     @Test fun phoneStatusReportsBatteryAndTicksInBothThemes() {
         assertEquals("00:00:00", formatPhoneTime(java.time.LocalTime.MIDNIGHT))
         assertEquals("13:04:09", formatPhoneTime(java.time.LocalTime.of(13, 4, 9)))

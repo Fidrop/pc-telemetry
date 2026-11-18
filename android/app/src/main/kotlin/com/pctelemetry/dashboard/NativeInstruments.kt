@@ -66,14 +66,14 @@ internal fun DrawScope.label(paint: Paint, text: String, x: Float, y: Float, siz
     paint.textAlign = if (center) Paint.Align.CENTER else Paint.Align.LEFT
     drawContext.canvas.nativeCanvas.drawText(text, x, y, paint)
 }
-private fun polar(center: Offset, radius: Float, degrees: Float): Offset {
+internal fun polar(center: Offset, radius: Float, degrees: Float): Offset {
     val radians = degrees * PI / 180
     return Offset(center.x + radius * cos(radians).toFloat(), center.y + radius * sin(radians).toFloat())
 }
 private fun number(value: Float?, unit: String = "%") =
     value?.let { String.format(Locale.getDefault(), "%.1f%s", it, unit) } ?: "N/A"
 
-private fun DrawScope.reading(paint: Paint, value: Float?, centerX: Float, baseline: Float,
+internal fun DrawScope.reading(paint: Paint, value: Float?, centerX: Float, baseline: Float,
     fontSize: Float, color: Color = White, unit: String = "%") {
     if (value == null) { label(paint, "N/A", centerX, baseline, fontSize, color, true); return }
     val digits = number(value, "")
@@ -89,13 +89,18 @@ private fun DrawScope.reading(paint: Paint, value: Float?, centerX: Float, basel
 @Composable
 fun SportDashboard(values: InstrumentValues, state: DashboardState, status: String, age: String,
     selfTest: Float?, staleLabel: String, modifier: Modifier = Modifier, rogBranding: Boolean = true,
-    phone: PhoneStatus = PhoneStatus(), onEngineStop: () -> Unit = {}, selfTestRecovery: Float = 0f) {
+    phone: PhoneStatus = PhoneStatus(), onEngineStop: () -> Unit = {}, selfTestRecovery: Float = 0f,
+    preset: SportPreset = SportPreset.CLASSIC) {
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC); fontFeatureSettings = "tnum"
     } }
     val detailPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create("sans-serif", Typeface.NORMAL) } }
+    val presetPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD); fontFeatureSettings = "tnum"
+    } }
     Box(modifier) {
-        SportBackground(paint, detailPaint, rogBranding)
+        if (preset == SportPreset.CLASSIC) SportBackground(paint, detailPaint, rogBranding)
+        else SportPresetBackdrop(preset, presetPaint, detailPaint, rogBranding)
         Canvas(Modifier.fillMaxSize()) { design {
             fun sweep(live: Float?): Float? {
                 if (selfTest == null) return live
@@ -105,22 +110,38 @@ fun SportDashboard(values: InstrumentValues, state: DashboardState, status: Stri
             }
             val cpu = sweep(values.cpu)
             val gpu = sweep(values.gpu)
-            pointer(Offset(470f, 410f), sweep(values.cpuPointer))
-            pointer(Offset(1304f, 410f), sweep(values.gpuPointer))
-            reading(paint, cpu, 470f, 520f, 80f)
-            reading(paint, gpu, 1304f, 520f, 80f)
+            val cpuNeedle = sweep(values.cpuPointer)
+            val gpuNeedle = sweep(values.gpuPointer)
+            val instruments = if (preset == SportPreset.CLASSIC) paint else presetPaint
+            val loadBaseline = when (preset) {
+                SportPreset.CLASSIC -> 520f
+                SportPreset.APEX -> 505f
+                SportPreset.TOURING -> 479f
+            }
+            val temperatureBaseline = when (preset) {
+                SportPreset.CLASSIC, SportPreset.APEX -> 605f
+                SportPreset.TOURING -> 567f
+            }
+            if (preset == SportPreset.CLASSIC) {
+                pointer(Offset(470f, 410f), cpuNeedle)
+                pointer(Offset(1304f, 410f), gpuNeedle)
+            } else {
+                sportPresetLoad(preset, cpuNeedle, gpuNeedle)
+            }
+            reading(instruments, cpu, 470f, loadBaseline, 80f)
+            reading(instruments, gpu, 1304f, loadBaseline, 80f)
             if (selfTest == null && state.snapshot?.metrics?.cpuUsage?.status == "stale")
-                label(paint, staleLabel, 470f, 556f, 23f, Orange, true)
+                label(paint, staleLabel, 470f, loadBaseline + 36f, 23f, Orange, true)
             if (selfTest == null && state.snapshot?.metrics?.gpuUsage?.status == "stale")
-                label(paint, staleLabel, 1304f, 556f, 23f, Orange, true)
+                label(paint, staleLabel, 1304f, loadBaseline + 36f, 23f, Orange, true)
             val cpuTemp = number(sweep(values.cpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.cpuTemperature?.status, staleLabel) else ""
             val gpuTemp = number(sweep(values.gpuTemp), "°C") + if (selfTest == null) staleSuffix(state.snapshot?.metrics?.gpuTemperature?.status, staleLabel) else ""
             if (selfTest == null && state.snapshot?.metrics?.cpuTemperature?.status == "stale")
-                label(paint, cpuTemp, 470f, 605f, 43f, center = true)
-            else reading(paint, sweep(values.cpuTemp), 470f, 605f, 43f, unit = "°C")
+                label(instruments, cpuTemp, 470f, temperatureBaseline, 43f, center = true)
+            else reading(instruments, sweep(values.cpuTemp), 470f, temperatureBaseline, 43f, unit = "°C")
             if (selfTest == null && state.snapshot?.metrics?.gpuTemperature?.status == "stale")
-                label(paint, gpuTemp, 1304f, 605f, 43f, center = true)
-            else reading(paint, sweep(values.gpuTemp), 1304f, 605f, 43f, unit = "°C")
+                label(instruments, gpuTemp, 1304f, temperatureBaseline, 43f, center = true)
+            else reading(instruments, sweep(values.gpuTemp), 1304f, temperatureBaseline, 43f, unit = "°C")
             label(detailPaint, status + if (selfTest != null) " · STARTUP SELF TEST" else "", 95f, 91f, 16f,
                 if (selfTest != null) Orange else if (state.isOffline) Red else Silver)
             label(paint, "ENGINE STOP", 887f, 535f, 27f, White, true, 190f)

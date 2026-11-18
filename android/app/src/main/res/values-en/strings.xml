@@ -69,6 +69,9 @@
     <string name="connect_new_device">Connect a new device</string>
     <string name="settings_audio_tab">Audio</string>
     <string name="settings_devices_tab">Devices</string>
-    <string name="settings_device_hint">Manage PCs and connections in the Devices tab.</string>
+    <string name="sport_preset">SPORT layout</string>
+    <string name="sport_classic">Classic</string>
+    <string name="sport_apex">Apex</string>
+    <string name="sport_touring">Twin Ring</string>
     <string name="settings_display_tab">Display</string>
 </resources>

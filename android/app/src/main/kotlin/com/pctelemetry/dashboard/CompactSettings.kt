@@ -171,7 +171,11 @@ fun SettingsPanel(model: DashboardViewModel, value: UiSettings, onDismiss: () ->
                                             modifier = Modifier.semantics { contentDescription = pixelDescription }, colors = settingsSwitchColors(accent))
                                     }
                                     HorizontalDivider(color = Silver.copy(alpha = 0.16f))
-                                    Text(stringResource(R.string.settings_device_hint), color = Silver, fontSize = 12.sp)
+                                    SettingGroup(stringResource(R.string.sport_preset)) {
+                                        Choices(SportPreset.entries.map { stringResource(it.label) }, value.sportPreset.ordinal, accent) { index ->
+                                            model.changeSettings { it.copy(sportPreset = SportPreset.entries[index]) }
+                                        }
+                                    }
                                 }
                             }
                             2 -> {
